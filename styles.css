@@ -60,19 +60,22 @@ h2{
 
 /* Product List */
 .product-list{
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
     display: flex;
     flex-wrap: wrap;
+    justify-content: space-between;
     gap: 1rem;
-    justify-content: center;
 }
 
 .product-item{
+    flex: 1 1 calc(33.333% - 1rem);
+    max-width: calc(33.333% - 1rem);
     background: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    flex: 1 1 calc(33.333% - 1rem);
-    max-width: calc(33.333% - 1rem);
     padding: 1rem;
     text-align: center;
     transition: transform 0.3s, box-shadow 0.3s;
@@ -200,8 +203,8 @@ footer{
 /* Responsive Design */
 @media (max-width: 1024px){
     .product-item{
-        flex: 1 1 calc(50%-1rem);
-        max-width: calc(50%-1rem);
+        flex: 1 1 calc(50% - 1rem);
+        max-width: calc(50% - 1rem);
     }
 }
 
