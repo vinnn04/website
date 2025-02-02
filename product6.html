@@ -15,11 +15,22 @@
                         <li><a href="website.html">Home</a></li>
                         <li><a href="#">Categories</a></li>
                         <li><a href="#">Registries</a></li>
-                        <li><a href="#">Cart</a></li>
                     </ul>
                 </nav>
             </div>
         </header>
+
+    <div class="shopping-list-container">
+        <div class="shopping-list-header">Shopping List</div>
+        <div class="shopping-list-content">
+            <h2>Your Items</h2>
+            <ul id="shopping-list-items"></ul>
+            <div class="shopping-list-footer">
+                <p>Total: $<span id="shopping-list-total">0</span></p>
+                <button onclick="checkout()">Checkout</button>
+            </div>
+        </div>
+    </div>
 
     <nav class="breadcrumb">
         <a href="website.html">Home</a> &gt;
@@ -43,7 +54,7 @@
                     <h2>Product 6</h2>
                     <p class="description">This is the description of Product 6.</p>
                     <p class="price">$60</p>
-                    <button>Add to Cart</button>
+                    <button onclick="addToShoppingList(6, 'Product 6', 60)">Add to Cart</button>
                 </div>
             </div>
         </div>
@@ -52,6 +63,8 @@
     <footer>
         <p>&copy; 2025 Dummy Shop. All rights reserved.</p>
     </footer>
+
+    <script src="script.js"></script>
 
     </body>
 </html>

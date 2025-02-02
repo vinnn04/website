@@ -37,6 +37,7 @@ header nav ul{
 
 header nav ul li{
     margin: 0 1rem;
+    position: relative;
 }
 
 header nav ul li a{
@@ -121,29 +122,19 @@ h2{
     background-color: #cf3e13;
 }
 
-.shopping-list{
+.shop{
     margin-top: 1rem;
 }
 
-.shopping-list label{
+.shop label{
     display: inline-block;
     margin-right: 0.5rem;
 }
 
-.shopping-list input {
+.shop input {
     width: 50px;
     padding: 0.3rem;
     text-align: center;
-}
-
-.shopping-list checkout{
-    background-color: #e8491d;
-    color: #fff;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: background 0.3s;
 }
 
 /* Product Page Styling */
@@ -292,4 +283,72 @@ footer{
 .sidebar ul li a:hover{
     color: #0056b3;
     text-decoration: underline;
+}
+
+/* Shopping List */
+.shopping-list-container {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    width: 300px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    z-index: 1000;
+    transition: max-height 0.3s ease-in-out;
+    max-height: 40px;
+}
+
+.shopping-list-container:hover {
+    max-height: 300px;
+}
+
+.shopping-list-header {
+    background: #007bff;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.shopping-list-content {
+    padding: 1rem;
+}
+
+.shopping-list-content h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.shopping-list-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+}
+
+.shopping-list-content ul li {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.shopping-list-footer {
+    text-align: center;
+}
+
+.shopping-list-footer button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.shopping-list-footer button:hover {
+    background: #0056b3;
 }
