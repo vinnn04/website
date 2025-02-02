@@ -3,8 +3,8 @@ let shoppingList = [];
 function loadShoppingList() {
     const storedList = localStorage.getItem("shoppingList");
     if (storedList) {
-        shoppingList = JSON.parse(storedList);
-        updateShoppingListDisplay();
+    shoppingList = JSON.parse(storedList);
+    updateShoppingListDisplay();
     }
 }
 
@@ -14,18 +14,18 @@ function saveShoppingList() {
 
 function addProductToCart(id, name, price, quantityInputId) {
     const quantityInput = document.getElementById(quantityInputId);
-    const quantity = parseInt(quantityInput.value);
+    const quantity = parseInt(quantityInput.value, 10);
 
     if (isNaN(quantity) || quantity < 1) {
-        alert("Please enter a valid quantity.");
-        return;
+    alert("Please enter a valid quantity!");
+    return;
     }
 
     const existingItem = shoppingList.find(item => item.id === id);
     if (existingItem) {
-        existingItem.quantity += quantity;
+    existingItem.quantity += quantity;
     } else {
-        shoppingList.push({ id, name, price, quantity });
+    shoppingList.push({ id, name, price, quantity });
     }
 
     saveShoppingList();
@@ -40,10 +40,10 @@ function updateShoppingListDisplay() {
     let total = 0;
 
     shoppingList.forEach(item => {
-        total += item.price * item.quantity;
-        const listItem = document.createElement("li");
-        listItem.textContent = `${item.name} [${item.quantity}] - $${(item.price * item.quantity).toFixed(2)}`;
-        shoppingListItems.appendChild(listItem);
+    total += item.price * item.quantity;
+    const listItem = document.createElement("li");
+    listItem.textContent = `${item.name} [${item.quantity}] - $${(item.price * item.quantity).toFixed(2)}`;
+    shoppingListItems.appendChild(listItem);
     });
 
     shoppingListTotal.textContent = total.toFixed(2);
@@ -52,18 +52,24 @@ function updateShoppingListDisplay() {
 
 function checkout() {
     if (shoppingList.length === 0) {
-        alert("Your shopping list is empty. Please add items to proceed.");
+    alert("Your shopping list is empty. Please add items to proceed.");
     } else {
-        let message = "You are about to checkout the following items:\n\n";
-        shoppingList.forEach(item => {
-            message += `${item.name} - Quantity: ${item.quantity} - Price: $${(item.price * item.quantity).toFixed(2)}\n`;
-        });
-        message += `\nTotal: $${shoppingList.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2)}`;
-        alert(message);
-        shoppingList = [];
-        saveShoppingList();
-        updateShoppingListDisplay();
+    let message = "You are about to checkout the following items:\n\n";
+    shoppingList.forEach(item => {
+        message += `${item.name} - Quantity: ${item.quantity} - Price: $${(item.price * item.quantity).toFixed(2)}\n`;
+    });
+    message += `\nTotal: $${shoppingList.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2)}`;
+    alert(message);
+    shoppingList = [];
+    saveShoppingList();
+    updateShoppingListDisplay();
     }
 }
+
+window.loadShoppingList = loadShoppingList;
+window.saveShoppingList = saveShoppingList;
+window.addProductToCart = addProductToCart;
+window.updateShoppingListDisplay = updateShoppingListDisplay;
+window.checkout = checkout;
 
 loadShoppingList();

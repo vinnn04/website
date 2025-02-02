@@ -306,7 +306,7 @@ footer{
 }
 
 .shopping-list-header {
-    background: #007bff;
+    background: #2784e7;
     color: white;
     padding: 1rem;
     text-align: center;
@@ -344,7 +344,7 @@ footer{
 }
 
 .shopping-list-footer button {
-    background: #007bff;
+    background: #398be2;
     color: white;
     border: none;
     padding: 0.5rem 1rem;
@@ -353,5 +353,5 @@ footer{
 }
 
 .shopping-list-footer button:hover {
-    background: #0056b3;
+    background: #509cee;
 }
