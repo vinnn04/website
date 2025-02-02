@@ -60,6 +60,7 @@ h2{
 
 /* Product List */
 .product-list{
+    flex: 1;
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
@@ -67,6 +68,7 @@ h2{
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 1rem;
+    padding: 0;
 }
 
 .product-item{
@@ -159,6 +161,7 @@ h2{
 }
 
 .product-info{
+    text-align: center;
     width: 50%;
     margin-left: 5%;
 }
@@ -189,6 +192,28 @@ h2{
 
 .product-info button:hover{
     background-color: #cf3e13;
+}
+
+/* Hierarchical Navigation Menu */
+.breadcrumb{
+    font-size: 0.9rem;
+    margin: 1rem 0;
+    padding: 0.5rem 1rem;
+}
+
+.breadcrumb a{
+    text-decoration: underline;
+    color: #007bff;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.breadcrumb a:hover{
+    text-decoration: underline;
+}
+
+.breadcrumb span{
+    color: #555;
 }
 
 /* Footer Styling */
@@ -222,4 +247,49 @@ footer{
     nav ul li{
         margin: 0.5rem 0;
     }
+}
+
+/* Categories List */
+.categories{
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.sidebar{
+    flex: 0 0 200px;
+    max-width: 240px;
+    background-color: #f4f4f4;
+    padding: 1rem;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.sidebar h3{
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: #333;
+    text-align: center;
+}
+
+.sidebar ul{
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar ul li{
+    margin-bottom: 0.5rem;
+}
+
+.sidebar ul li a{
+    text-decoration: none;
+    color: #007bff;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+}
+
+.sidebar ul li a:hover{
+    color: #0056b3;
+    text-decoration: underline;
 }
