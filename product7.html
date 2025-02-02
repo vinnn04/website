@@ -55,7 +55,11 @@
                     <h2>Product 7</h2>
                     <p class="description">This is the description of Product 7.</p>
                     <p class="price">$70</p>
-                    <button onclick="addToShoppingList(7, 'Product 7', 70)">Add to Cart</button>
+                    <div class="shop">
+                        <label for="quantity7">Quantity:</label>
+                        <input type="number" id="quantity7" name="quantity7" min="1" value = "1">
+                        <button onclick="addProductToCart(7, 'Product 7', 70, 'quantity7')">Add to Cart</button>
+                    </div>
                 </div>
             </div>
         </div>
