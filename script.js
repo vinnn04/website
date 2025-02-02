@@ -1,34 +1,53 @@
 let shoppingList = [];
 
-function addToShoppingList(id, name, price) {
+function loadShoppingList() {
+    const storedList = localStorage.getItem("shoppingList");
+    if (storedList) {
+        shoppingList = JSON.parse(storedList);
+        updateShoppingListDisplay();
+    }
+}
+
+function saveShoppingList() {
+    localStorage.setItem("shoppingList", JSON.stringify(shoppingList));
+}
+
+function addProductToCart(id, name, price, quantityInputId) {
+    const quantityInput = document.getElementById(quantityInputId);
+    const quantity = parseInt(quantityInput.value);
+
+    if (isNaN(quantity) || quantity < 1) {
+        alert("Please enter a valid quantity.");
+        return;
+    }
+
     const existingItem = shoppingList.find(item => item.id === id);
     if (existingItem) {
-        existingItem.quantity++;
+        existingItem.quantity += quantity;
     } else {
-        shoppingList.push({ id, name, price, quantity: 1 });
+        shoppingList.push({ id, name, price, quantity });
     }
+
+    saveShoppingList();
     updateShoppingListDisplay();
 }
 
 function updateShoppingListDisplay() {
     const shoppingListItems = document.getElementById("shopping-list-items");
     const shoppingListTotal = document.getElementById("shopping-list-total");
+    const shoppingListHeader = document.querySelector(".shopping-list-header");
     shoppingListItems.innerHTML = "";
     let total = 0;
 
     shoppingList.forEach(item => {
         total += item.price * item.quantity;
         const listItem = document.createElement("li");
-        listItem.textContent = `${item.name} [${item.quantity}] - $${item.price.toFixed(2)}`;
+        listItem.textContent = `${item.name} [${item.quantity}] - $${(item.price * item.quantity).toFixed(2)}`;
         shoppingListItems.appendChild(listItem);
     });
 
     shoppingListTotal.textContent = total.toFixed(2);
-}
-
-function toggleShoppingList() {
-    const shoppingListElement = document.getElementById("shopping-list");
-    shoppingListElement.classList.toggle("hidden");
+    shoppingListHeader.textContent = `Shopping List - $${total.toFixed(2)}`;
 }
 
 function checkout() {
@@ -42,6 +61,9 @@ function checkout() {
         message += `\nTotal: $${shoppingList.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2)}`;
         alert(message);
         shoppingList = [];
+        saveShoppingList();
         updateShoppingListDisplay();
     }
 }
+
+loadShoppingList();

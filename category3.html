@@ -21,7 +21,7 @@
         </header>
 
     <div class="shopping-list-container">
-        <div class="shopping-list-header">Shopping List</div>
+        <div class="shopping-list-header">Shopping List - $0.00</div>
         <div class="shopping-list-content">
             <h2>Your Items</h2>
             <ul id="shopping-list-items"></ul>
@@ -53,30 +53,30 @@
                     <img src="images/product7.jpg" alt="Product 7" onclick="location.href='product7.html'">
                     <h3 onclick="location.href='product7.html'">Product 7</h3>
                     <p class="price">$70</p>
-                    <button onclick="addToShoppingList(7, 'Product 7', 70)">Add to Cart</button>
                     <div class="shop">
                         <label for="quantity7">Quantity:</label>
                         <input type="number" id="quantity7" name="quantity7" min="1" value = "1">
+                        <button onclick="addProductToCart(7, 'Product 7', 70, 'quantity7')">Add to Cart</button>
                     </div>
                 </div>
                 <div class = "product-item">
                     <img src="images/product8.jpg" alt="Product 8" onclick="location.href='product8.html'">
                     <h3 onclick="location.href='product8.html'">Product 8</h3>
                     <p class="price">$80</p>
-                    <button onclick="addToShoppingList(8, 'Product 8', 80)">Add to Cart</button>
                     <div class="shop">
                         <label for="quantity8">Quantity:</label>
                         <input type="number" id="quantity8" name="quantity8" min="1" value = "1">
+                        <button onclick="addProductToCart(8, 'Product 8', 80, 'quantity8')">Add to Cart</button>
                     </div>
                 </div>
                 <div class = "product-item">
                     <img src="images/product9.jpg" alt="Product 9" onclick="location.href='product9.html'">
                     <h3 onclick="location.href='product9.html'">Product 9</h3>
                     <p class="price">$90</p>
-                    <button onclick="addToShoppingList(9, 'Product 9', 90)">Add to Cart</button>
                     <div class="shop">
                         <label for="quantity9">Quantity:</label>
                         <input type="number" id="quantity9" name="quantity9" min="1" value = "1">
+                        <button onclick="addProductToCart(9, 'Product 9', 90, 'quantity9')">Add to Cart</button>
                     </div>
                 </div>
             </div>
