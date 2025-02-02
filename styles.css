@@ -317,6 +317,8 @@ footer{
 
 .shopping-list-content {
     padding: 1rem;
+    max-height: 250px;
+    overflow-y: auto;
 }
 
 .shopping-list-content h2 {
@@ -334,6 +336,7 @@ footer{
 .shopping-list-content ul li {
     margin-bottom: 0.5rem;
     font-size: 0.9rem;
+    word-wrap: break-word;
 }
 
 .shopping-list-footer {
