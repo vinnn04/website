@@ -42,15 +42,14 @@ const upload = multer({
   },
 });
 
-// Serve Static Files (e.g., Forms, Uploaded Files)
-app.use(express.static("public")); // Serves HTML forms from the `public` folder
+// Serve Static Files
+app.use(express.static("public")); // Serves HTML files from the `public` folder
 app.use("/uploads", express.static("uploads")); // Serves uploaded images
 
 // ------------------ Backend APIs ------------------ //
 
 // Categories Endpoints
 
-// GET /categories - Retrieve all categories
 app.get("/categories", (req, res) => {
   db.query("SELECT * FROM categories", (err, results) => {
     if (err) {
@@ -61,7 +60,6 @@ app.get("/categories", (req, res) => {
   });
 });
 
-// POST /categories - Add a new category
 app.post("/categories", (req, res) => {
   const { name } = req.body;
   if (!name) {
@@ -70,14 +68,12 @@ app.post("/categories", (req, res) => {
   db.query("INSERT INTO categories (name) VALUES (?)", [name], (err, result) => {
     if (err) {
       console.error("Database error while adding category:", err);
-      // Return the actual database error message for debugging
       return res.status(500).json({ error: "Error adding category: " + err.message });
     }
     res.json({ message: "Category added successfully", categoryId: result.insertId });
   });
 });
 
-// PUT /categories/:catid - Update an existing category
 app.put('/categories/:catid', (req, res) => {
   const catid = req.params.catid;
   const { name } = req.body;
@@ -96,7 +92,6 @@ app.put('/categories/:catid', (req, res) => {
   });
 });
 
-// DELETE /categories/:catid - Delete a category
 app.delete('/categories/:catid', (req, res) => {
   const catid = req.params.catid;
   const sql = "DELETE FROM categories WHERE catid = ?";
@@ -112,6 +107,7 @@ app.delete('/categories/:catid', (req, res) => {
 // Products Endpoints
 
 // POST /products - Add a new product (with image upload)
+// Now supporting image resizing and thumbnail generation.
 app.post("/products", upload.single("image"), async (req, res) => {
   const { catid, name, price, description } = req.body;
   const image = req.file ? `uploads/${req.file.filename}` : null;
@@ -140,22 +136,27 @@ app.post("/products", upload.single("image"), async (req, res) => {
     errors.push("Product image is required.");
   }
 
-  // If there are validation errors, return them
+  // Return validation errors if any
   if (errors.length > 0) {
     return res.status(400).json({ errors });
   }
 
   if (req.file) {
-    // Resize image to create a thumbnail
-    await sharp(req.file.path)
-      .resize(200, 200) // Resize to 200x200 pixels
-      .toFile(thumbnail);
+    try {
+      // Create a smaller thumbnail image (e.g., 200x200 pixels).
+      await sharp(req.file.path)
+        .resize(200, 200, { fit: 'inside' })
+        .toFile(thumbnail);
+    } catch (resizeError) {
+      console.error("Error resizing image:", resizeError);
+      return res.status(500).json({ error: "Error processing image." });
+    }
   }
 
-  // Insert Data into the Database
+  // Insert Data into the Database (make sure your products table has a thumbnail_path column)
   db.query(
-    "INSERT INTO products (catid, name, price, description, image_path) VALUES (?, ?, ?, ?, ?)",
-    [catid, name, price, description, image],
+    "INSERT INTO products (catid, name, price, description, image_path, thumbnail_path) VALUES (?, ?, ?, ?, ?, ?)",
+    [catid, name, price, description, image, thumbnail],
     (err, result) => {
       if (err) {
         console.error("Database Error:", err);
@@ -166,27 +167,41 @@ app.post("/products", upload.single("image"), async (req, res) => {
   );
 });
 
-// GET /products - Retrieve products (optional: filter by category id)
+// GET /products - Retrieve products or details for a single product if pid is provided.
 app.get("/products", (req, res) => {
-  let catid = parseInt(req.query.catid);
-  let query = "SELECT * FROM products";
-  let params = [];
+  if (req.query.pid) {
+    const pid = parseInt(req.query.pid);
+    db.query("SELECT * FROM products WHERE pid = ?", [pid], (err, results) => {
+      if (err) {
+        console.error("Error retrieving product:", err);
+        return res.status(500).json({ error: "Error retrieving product" });
+      }
+      if (results.length === 0) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      res.json(results[0]);
+    });
+  } else {
+    let catid = parseInt(req.query.catid);
+    let query = "SELECT * FROM products";
+    let params = [];
 
-  if (catid) {
-    query += " WHERE catid = ?";
-    params.push(catid);
-  }
-
-  db.query(query, params, (err, results) => {
-    if (err) {
-      console.error("Error retrieving products:", err);
-      return res.status(500).json({ error: "Error retrieving products" });
+    if (catid) {
+      query += " WHERE catid = ?";
+      params.push(catid);
     }
-    res.json(results);
-  });
+
+    db.query(query, params, (err, results) => {
+      if (err) {
+        console.error("Error retrieving products:", err);
+        return res.status(500).json({ error: "Error retrieving products" });
+      }
+      res.json(results);
+    });
+  }
 });
 
-// PUT /products/:pid - Update a product (text data only)
+// Update and Delete endpoints remain unchanged.
 app.put('/products/:pid', (req, res) => {
   const pid = req.params.pid;
   const { catid, name, price, description } = req.body;
@@ -205,7 +220,6 @@ app.put('/products/:pid', (req, res) => {
   });
 });
 
-// DELETE /products/:pid - Delete a product
 app.delete('/products/:pid', (req, res) => {
   const pid = req.params.pid;
   const sql = "DELETE FROM products WHERE pid = ?";
@@ -218,7 +232,7 @@ app.delete('/products/:pid', (req, res) => {
   });
 });
 
-// Serve the Homepage - List All Products in a Table
+// Serve the Homepage - List All Products in a Table (for testing purposes)
 app.get("/", (req, res) => {
   db.query("SELECT * FROM products", (err, products) => {
     if (err) {
@@ -279,7 +293,7 @@ app.get("/", (req, res) => {
           <td>${product.name}</td>
           <td>${product.price}</td>
           <td>${product.description}</td>
-          <td><img src="/${product.image_path}" alt="${product.name}"></td>
+          <td><img src="/${product.thumbnail_path}" alt="${product.name}"></td>
         </tr>
       `;
     });
