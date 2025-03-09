@@ -21,18 +21,14 @@
     }
   </style>
   <script>
-    // Fetch categories dynamically and populate the dropdown for the Add Product form.
     async function loadCategories() {
       const dropdown = document.getElementById('catid');
       try {
-        // If you have applied Option 1 in the previous steps, use '/api/categories'
         const response = await fetch('/categories');
         const categories = await response.json();
-        // Clear any existing options (beyond the placeholder)
         dropdown.innerHTML = '<option value="" disabled selected>Select a category</option>';
         categories.forEach((category) => {
           const option = document.createElement('option');
-          // Assume your SQL returns columns "catid" and "name"
           option.value = category.catid;
           option.textContent = category.name;
           dropdown.appendChild(option);
@@ -43,7 +39,6 @@
       }
     }
 
-    // Load products in the Manage Products table
     async function loadProducts() {
       try {
         const response = await fetch('/products');
@@ -51,7 +46,6 @@
         const tableBody = document.getElementById('productsTableBody');
         tableBody.innerHTML = "";
         products.forEach(product => {
-          // Create a table row for each product
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${product.pid}</td>
@@ -71,10 +65,8 @@
       }
     }
 
-    // Update product using a simple prompt-based approach
     async function editProduct(pid) {
       try {
-        // Fetch current product data (if needed, or rely on your table's data)
         const name = prompt("Enter new product name:");
         if (!name) return;
         const price = prompt("Enter new price:");
@@ -84,8 +76,6 @@
         const catid = prompt("Enter new category id:");
         if (!catid || isNaN(catid)) return alert("Invalid category id.");
 
-        // Note: For updating the product image, you might need a separate file upload flow.
-        // Here, we assume that image update is not supported in this simple prompt-based update.
         const updatedProduct = { name, price: parseFloat(price), description, catid: parseInt(catid) };
 
         const response = await fetch(`/products/${pid}`, {
@@ -105,7 +95,6 @@
       }
     }
 
-    // Delete a product
     async function deleteProduct(pid) {
       if (!confirm("Are you sure you want to delete this product?")) return;
       try {
@@ -124,7 +113,6 @@
       }
     }
 
-    // When the page loads, load categories and products.
     window.onload = function() {
       loadCategories();
       loadProducts();
@@ -136,7 +124,6 @@
     <h1>Add a New Product</h1>
     <form id="productForm" action="/products" method="POST" enctype="multipart/form-data">
       <label for="catid">Category:</label>
-      <!-- Dropdown menu for selecting category -->
       <select id="catid" name="catid" required>
         <option value="" disabled selected>Select a category</option>
       </select>
@@ -176,7 +163,6 @@
         </tr>
       </thead>
       <tbody id="productsTableBody">
-        <!-- Products will be dynamically loaded here -->
       </tbody>
     </table>
   </div>

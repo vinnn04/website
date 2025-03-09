@@ -13,8 +13,8 @@ app.use(express.json());
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "y9451216A123!@#", // Replace with your MySQL password
-  database: "mydb",          // Replace with your database name
+  password: "",              // Replace with MySQL password
+  database: "",          // Replace with database name
 });
 
 db.connect((err) => {
@@ -27,8 +27,8 @@ db.connect((err) => {
 
 // Multer Configuration for File Uploads
 const upload = multer({
-  dest: "uploads/", // Folder to store uploaded files
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  dest: "uploads/",
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedExtensions = /jpg|jpeg|png|gif/;
     const extname = allowedExtensions.test(
@@ -43,13 +43,11 @@ const upload = multer({
 });
 
 // Serve Static Files
-app.use(express.static("public")); // Serves HTML files from the `public` folder
-app.use("/uploads", express.static("uploads")); // Serves uploaded images
+app.use(express.static("public"));
+app.use("/uploads", express.static("uploads"));
 
-// ------------------ Backend APIs ------------------ //
 
 // Categories Endpoints
-
 app.get("/categories", (req, res) => {
   db.query("SELECT * FROM categories", (err, results) => {
     if (err) {
@@ -106,8 +104,6 @@ app.delete('/categories/:catid', (req, res) => {
 
 // Products Endpoints
 
-// POST /products - Add a new product (with image upload)
-// Now supporting image resizing and thumbnail generation.
 app.post("/products", upload.single("image"), async (req, res) => {
   const { catid, name, price, description } = req.body;
   const image = req.file ? `uploads/${req.file.filename}` : null;
@@ -136,14 +132,12 @@ app.post("/products", upload.single("image"), async (req, res) => {
     errors.push("Product image is required.");
   }
 
-  // Return validation errors if any
   if (errors.length > 0) {
     return res.status(400).json({ errors });
   }
 
   if (req.file) {
     try {
-      // Create a smaller thumbnail image (e.g., 200x200 pixels).
       await sharp(req.file.path)
         .resize(200, 200, { fit: 'inside' })
         .toFile(thumbnail);
@@ -167,7 +161,7 @@ app.post("/products", upload.single("image"), async (req, res) => {
   );
 });
 
-// GET /products - Retrieve products or details for a single product if pid is provided.
+// GET /products - Retrieve products or details for a single product if pid is provided
 app.get("/products", (req, res) => {
   if (req.query.pid) {
     const pid = parseInt(req.query.pid);
@@ -201,7 +195,6 @@ app.get("/products", (req, res) => {
   }
 });
 
-// Update and Delete endpoints remain unchanged.
 app.put('/products/:pid', (req, res) => {
   const pid = req.params.pid;
   const { catid, name, price, description } = req.body;
@@ -309,7 +302,6 @@ app.get("/", (req, res) => {
   });
 });
 
-// ------------------ Start the Server ------------------ //
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}/`);

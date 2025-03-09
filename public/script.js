@@ -1,5 +1,3 @@
-// ------------------ OOP Design for the Shopping Cart ------------------
-
 class CartItem {
   constructor(id, name, price, quantity) {
     this.id = id;
@@ -14,7 +12,7 @@ class Cart {
     this.items = [];
   }
 
-  // Add product to cart; if it exists, increment the quantity.
+  // Add product to cart; if it exists, increment the quantity
   addItem(id, name, price, quantity) {
     const existingItem = this.items.find(item => item.id === id);
     if (existingItem) {
@@ -26,7 +24,7 @@ class Cart {
     this.updateDisplay();
   }
 
-  // Update item quantity to a specified value.
+  // Update item quantity to a specified value
   updateItemQuantity(id, quantity) {
     quantity = parseInt(quantity, 10);
     if (isNaN(quantity) || quantity < 1) {
@@ -41,7 +39,7 @@ class Cart {
     }
   }
 
-  // Increment the item quantity by 1.
+  // Increment the item quantity by 1
   incrementItem(id) {
     const item = this.items.find(item => item.id === id);
     if (item) {
@@ -51,7 +49,7 @@ class Cart {
     }
   }
 
-  // Decrement the item quantity by 1 (or remove the item if it reaches 0).
+  // Decrement the item quantity by 1 (or remove the item if it reaches 0)
   decrementItem(id) {
     const item = this.items.find(item => item.id === id);
     if (item) {
@@ -59,26 +57,26 @@ class Cart {
         item.quantity--;
       } else {
         this.removeItem(id);
-        return; // removeItem() already calls save and updateDisplay.
+        return;
       }
       this.save();
       this.updateDisplay();
     }
   }
 
-  // Remove an item from the cart.
+  // Remove an item from the cart
   removeItem(id) {
     this.items = this.items.filter(item => item.id !== id);
     this.save();
     this.updateDisplay();
   }
 
-  // Calculate the total price of the cart.
+  // Calculate the total price of the cart
   getTotal() {
     return this.items.reduce((total, item) => total + item.price * item.quantity, 0);
   }
 
-  // Save minimal cart data (only id and quantity) to localStorage.
+  // Save minimal cart data (only id and quantity) to localStorage
   save() {
     const minimalList = this.items.map(item => ({
       id: item.id,
@@ -87,12 +85,11 @@ class Cart {
     localStorage.setItem("shoppingList", JSON.stringify(minimalList));
   }
 
-  // Load cart data from localStorage and fetch full product details.
+  // Load cart data from localStorage and fetch full product details
   load() {
     const storedList = localStorage.getItem("shoppingList");
     if (storedList) {
       const minimalList = JSON.parse(storedList);
-      // Fetch full details for each stored item
       Promise.all(
         minimalList.map(item =>
           fetch(`/products?pid=${item.id}`)
@@ -103,7 +100,6 @@ class Cart {
               return response.json();
             })
             .then(product => {
-              // Merge fetched details with stored quantity.
               return new CartItem(product.pid, product.name, product.price, item.quantity);
             })
         )
@@ -118,7 +114,7 @@ class Cart {
     }
   }
 
-  // Update the shopping cart display in the UI.
+  // Update the shopping cart display in the UI
   updateDisplay() {
     const shoppingListItems = document.getElementById("shopping-list-items");
     const shoppingListTotal = document.getElementById("shopping-list-total");
@@ -147,7 +143,7 @@ class Cart {
     shoppingListHeader.textContent = `Shopping List - $${total.toFixed(2)}`;
   }
 
-  // Clear the cart on checkout.
+  // Clear the cart on checkout
   checkout() {
     if (this.items.length === 0) {
       alert("Your shopping list is empty. Please add items to proceed.");
@@ -165,15 +161,9 @@ class Cart {
   }
 }
 
-// ------------------ End of OOP classes ------------------
-
-// Create a single global instance of the Cart.
 const shoppingCart = new Cart();
 
-// Expose some methods globally if needed (for inline HTML onclicks)
 window.shoppingCart = shoppingCart;
-
-// ------------------ Existing Helper Functions (Categories, Products, etc.) ------------------
 
 function addProductToCart(id, name, price, quantityInputId) {
   const quantityInput = document.getElementById(quantityInputId);
@@ -296,7 +286,6 @@ function updateQueryStringParameter(uri, key, value) {
   }
 }
 
-// ------------------ Initialize the Cart and Fetch Data ------------------
 shoppingCart.load();
 
 document.addEventListener("DOMContentLoaded", () => {

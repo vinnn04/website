@@ -35,7 +35,6 @@
     }
   </style>
   <script>
-    // Load categories and display them in the table
     async function loadCategories() {
       try {
         const response = await fetch('/categories');
@@ -60,7 +59,6 @@
       }
     }
 
-    // Handle Add Category Form Submission
     async function handleAddCategory(e) {
       e.preventDefault();
       const nameInput = document.getElementById('name');
@@ -89,7 +87,6 @@
       }
     }
 
-    // Edit Category
     async function editCategory(catId, currentName) {
       const newName = prompt("Enter the new category name:", currentName);
       if (!newName || newName.trim() === "") {
@@ -97,7 +94,6 @@
         return;
       }
       try {
-        // Assumes the existence of a PUT /categories/:catid endpoint on your backend
         const response = await fetch(`/categories/${catId}`, {
           method: 'PUT',
           headers: {
@@ -118,11 +114,9 @@
       }
     }
 
-    // Delete Category
     async function deleteCategory(catId) {
       if (!confirm("Are you sure you want to delete this category?")) return;
       try {
-        // Assumes the existence of a DELETE /categories/:catid endpoint on your backend
         const response = await fetch(`/categories/${catId}`, {
           method: 'DELETE'
         });
@@ -140,7 +134,6 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
-      // Attach event listener to the category form
       document.getElementById("categoryForm").addEventListener("submit", handleAddCategory);
       loadCategories();
     });
@@ -164,7 +157,6 @@
       </tr>
     </thead>
     <tbody id="categoriesTableBody">
-      <!-- Categories will be dynamically loaded here -->
     </tbody>
   </table>
 </body>
