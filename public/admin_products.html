@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Manage Products</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    table th { background-color: #f2f2f2; }
+    .form-section, .table-section {
+      margin-bottom: 40px;
+    }
+  </style>
+  <script>
+    // Fetch categories dynamically and populate the dropdown for the Add Product form.
+    async function loadCategories() {
+      const dropdown = document.getElementById('catid');
+      try {
+        // If you have applied Option 1 in the previous steps, use '/api/categories'
+        const response = await fetch('/categories');
+        const categories = await response.json();
+        // Clear any existing options (beyond the placeholder)
+        dropdown.innerHTML = '<option value="" disabled selected>Select a category</option>';
+        categories.forEach((category) => {
+          const option = document.createElement('option');
+          // Assume your SQL returns columns "catid" and "name"
+          option.value = category.catid;
+          option.textContent = category.name;
+          dropdown.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        alert('Unable to load categories. Please try again later.');
+      }
+    }
+
+    // Load products in the Manage Products table
+    async function loadProducts() {
+      try {
+        const response = await fetch('/products');
+        const products = await response.json();
+        const tableBody = document.getElementById('productsTableBody');
+        tableBody.innerHTML = "";
+        products.forEach(product => {
+          // Create a table row for each product
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${product.pid}</td>
+            <td>${product.catid}</td>
+            <td>${product.name}</td>
+            <td>$${product.price}</td>
+            <td>${product.description}</td>
+            <td>
+              <button onclick="editProduct(${product.pid})">Edit</button>
+              <button onclick="deleteProduct(${product.pid})">Delete</button>
+            </td>
+          `;
+          tableBody.appendChild(row);
+        });
+      } catch (error) {
+        console.error("Error loading products:", error);
+      }
+    }
+
+    // Update product using a simple prompt-based approach
+    async function editProduct(pid) {
+      try {
+        // Fetch current product data (if needed, or rely on your table's data)
+        const name = prompt("Enter new product name:");
+        if (!name) return;
+        const price = prompt("Enter new price:");
+        if (!price || isNaN(price)) return alert("Invalid price.");
+        const description = prompt("Enter new description:");
+        if (!description) return;
+        const catid = prompt("Enter new category id:");
+        if (!catid || isNaN(catid)) return alert("Invalid category id.");
+
+        // Note: For updating the product image, you might need a separate file upload flow.
+        // Here, we assume that image update is not supported in this simple prompt-based update.
+        const updatedProduct = { name, price: parseFloat(price), description, catid: parseInt(catid) };
+
+        const response = await fetch(`/products/${pid}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedProduct)
+        });
+        if (response.ok) {
+          alert("Product updated successfully!");
+          loadProducts();
+        } else {
+          const errorData = await response.json();
+          alert("Failed to update product: " + errorData.error);
+        }
+      } catch (error) {
+        console.error("Error updating product:", error);
+      }
+    }
+
+    // Delete a product
+    async function deleteProduct(pid) {
+      if (!confirm("Are you sure you want to delete this product?")) return;
+      try {
+        const response = await fetch(`/products/${pid}`, {
+          method: 'DELETE'
+        });
+        if (response.ok) {
+          alert("Product deleted successfully!");
+          loadProducts();
+        } else {
+          const errorData = await response.json();
+          alert("Failed to delete product: " + errorData.error);
+        }
+      } catch (error) {
+        console.error("Error deleting product:", error);
+      }
+    }
+
+    // When the page loads, load categories and products.
+    window.onload = function() {
+      loadCategories();
+      loadProducts();
+    }
+  </script>
+</head>
+<body>
+  <div class="form-section">
+    <h1>Add a New Product</h1>
+    <form id="productForm" action="/products" method="POST" enctype="multipart/form-data">
+      <label for="catid">Category:</label>
+      <!-- Dropdown menu for selecting category -->
+      <select id="catid" name="catid" required>
+        <option value="" disabled selected>Select a category</option>
+      </select>
+      <br><br>
+
+      <label for="name">Product Name:</label>
+      <input type="text" id="name" name="name" required minlength="3" maxlength="100" placeholder="Enter Product Name">
+      <br><br>
+
+      <label for="price">Price:</label>
+      <input type="number" id="price" name="price" required step="0.01" min="0.01" placeholder="Enter Price">
+      <br><br>
+
+      <label for="description">Description:</label>
+      <textarea id="description" name="description" required minlength="5" maxlength="500" placeholder="Enter Product Description"></textarea>
+      <br><br>
+
+      <label for="image">Product Image:</label>
+      <input type="file" id="image" name="image" required accept="image/png, image/jpeg, image/jpg">
+      <br><br>
+
+      <button type="submit">Add Product</button>
+    </form>
+  </div>
+
+  <div class="table-section">
+    <h2>Manage Products</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Product ID</th>
+          <th>Category ID</th>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="productsTableBody">
+        <!-- Products will be dynamically loaded here -->
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
