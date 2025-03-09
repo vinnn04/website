@@ -1,0 +1,22 @@
+{
+  "name": "website",
+  "version": "1.0.0",
+  "description": "my first website",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vinnn04/website.git"
+  },
+  "keywords": [
+    "Website"
+  ],
+  "author": "Vincent",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vinnn04/website/issues"
+  },
+  "homepage": "https://github.com/vinnn04/website#readme"
+}
