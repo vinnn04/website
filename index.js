@@ -130,19 +130,14 @@ app.post("/products", upload.single("image"), async (req, res) => {
     );
   });
 
-// Get Product Details by pid
-app.get("/product/:pid", (req, res) => {
-    const { pid } = req.params;
-    db.query("SELECT * FROM products WHERE pid = ?", [pid], (err, results) => {
+// Get All Products
+app.get("/products", (req, res) => {
+    db.query("SELECT * FROM products", (err, results) => {
       if (err) {
-        res.status(500).json({ error: "Error retrieving product details" });
-        return;
+        console.error("Error retrieving products:", err); // Log the error to debug
+        return res.status(500).json({ error: "Error retrieving products" });
       }
-      if (results.length === 0) {
-        res.status(404).json({ error: "Product not found" });
-        return;
-      }
-      res.json(results[0]);
+      res.json(results); // Send the product data as JSON
     });
   });
 
