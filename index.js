@@ -13,9 +13,8 @@ const bcrypt = require("bcrypt");
 
 const app = express();
 
-const SESSION_DURATION = 24 * 60 * 60 * 1000; // 1 day in ms
+const SESSION_DURATION = 24 * 60 * 60 * 1000;
 
-// In-memory session store -> token: { userid, email, admin }
 const sessions = {};
 
 app.use(helmet());
@@ -31,9 +30,9 @@ app.use((req, res, next) => {
   if (!req.cookies.csrfToken) {
     const token = crypto.randomBytes(32).toString("hex");
     res.cookie("csrfToken", token, {
-      httpOnly: false, // make available to JS for inclusion in AJAX calls
+      httpOnly: false,
       sameSite: "Strict",
-      secure: false // Set to true in production if using HTTPS
+      secure: false
     });
     req.csrfToken = token;
   } else {
@@ -95,7 +94,7 @@ function requireAdmin(req, res, next) {
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "y9451216A123!@#", // Replace with your actual password
+  password: "", // Replace with actual password
   database: "mydb"           // Replace with your actual database name
 });
 
@@ -135,12 +134,6 @@ function escapeHTML(str) {
   }[char]));
 }
 
-// ==================================================================
-// USER AUTHENTICATION ENDPOINTS
-// ==================================================================
-
-// POST /login - process login credentials
-// Updated login endpoint with CSRF protection
 app.post("/login", verifyCsrfToken, (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -169,14 +162,14 @@ app.post("/login", verifyCsrfToken, (req, res) => {
         createdAt: Date.now()
       };
 
-      // Set authToken cookie with HttpOnly and Secure flags, plus expiration time.
+      // Set authToken cookie with HttpOnly and Secure flags, plus expiration time
       res.cookie("authToken", token, {
         httpOnly: true,
         secure: true, // Set to true in production when using HTTPS
         expires: new Date(Date.now() + SESSION_DURATION)
       });
 
-      // Redirect based on role.
+      // Redirect based on role
       if (sessions[token].admin) {
         res.json({ message: "Login successful", redirect: "/admin.html" });
       } else {
@@ -224,8 +217,6 @@ app.get("/profile", (req, res) => {
   }
 });
 
-// POST /change-password - update password (requires current password verification)
-// After a successful change, the user is logged out.
 app.post("/change-password", requireAuth, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) {
@@ -261,11 +252,6 @@ app.post("/change-password", requireAuth, async (req, res) => {
   });
 });
 
-// ==================================================================
-// CATEGORIES ENDPOINTS
-// ==================================================================
-
-// GET /categories - public access to view categories
 app.get("/categories", (req, res, next) => {
   db.query("SELECT * FROM categories", (err, results) => {
     if (err) return next(err);
@@ -273,7 +259,6 @@ app.get("/categories", (req, res, next) => {
   });
 });
 
-// Admin-protected endpoints for managing categories.
 app.post(
   "/categories",
   requireAdmin,
@@ -357,11 +342,6 @@ app.delete(
   }
 );
 
-// ==================================================================
-// PRODUCTS ENDPOINTS
-// ==================================================================
-
-// GET /products - public access; supports a query parameter "pid" or "catid"
 app.get("/products", (req, res) => {
   if (req.query.pid) {
     const pid = parseInt(req.query.pid);

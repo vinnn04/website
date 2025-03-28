@@ -718,7 +718,6 @@ document.addEventListener("DOMContentLoaded", () => {
     loadProducts();
   }
   
-  // --- General: Load products or product details on public pages ---
   const urlParams = new URLSearchParams(window.location.search);
   const pid = parseInt(urlParams.get('pid'), 10);
   if (!isNaN(pid)) {
@@ -727,7 +726,6 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchProducts();
   }
   
-  // --- Attach checkout action for shopping list ---
   const btn = document.getElementById("checkout-button");
   if (btn) {
     btn.addEventListener("click", () => {
@@ -735,7 +733,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
-  // --- Logout Button Logic ---
   const logoutButton = document.getElementById("logout-button");
   if (logoutButton) {
     logoutButton.addEventListener("click", async (e) => {
@@ -758,7 +755,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Add event delegation for administrator category and product buttons
 document.addEventListener("click", function(e) {
   if (e.target.classList.contains("edit-category")) {
     const catid = e.target.getAttribute("data-catid");
@@ -779,5 +775,4 @@ document.addEventListener("click", function(e) {
   }
 });
 
-// Expose checkout globally for inline usage.
 window.checkout = () => shoppingCart.checkout();
