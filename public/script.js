@@ -1,3 +1,6 @@
+/**************************************************
+ * Utility Functions
+ **************************************************/
 function escapeHTML(str) {
   return String(str).replace(/[&<>"']/g, (char) => ({
     '&': '&amp;',
@@ -23,6 +26,9 @@ function updateQueryStringParameter(uri, key, value) {
     : uri + separator + key + "=" + value;
 }
 
+/**************************************************
+ * Shopping Cart Classes and Related Functions
+ **************************************************/
 class CartItem {
   constructor(id, name, price, quantity) {
     this.id = id;
@@ -229,7 +235,9 @@ class Cart {
 const shoppingCart = new Cart();
 window.shoppingCart = shoppingCart;
 
-
+/**************************************************
+ * Product and Category Fetching Functions
+ **************************************************/
 function fetchCategories() {
   fetch('/categories')
     .then(response => {
@@ -395,6 +403,9 @@ function fetchProductDetails(pid) {
     });
 }
 
+/**************************************************
+ * Page-Specific Logic (Login, Change Password, Admin, etc.)
+ **************************************************/
 document.addEventListener("DOMContentLoaded", () => {
   // Restore shopping cart from localStorage
   shoppingCart.load();
@@ -433,6 +444,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
+  // --- CHANGE PASSWORD PAGE ---
   const changePasswordForm = document.getElementById("changePasswordForm");
   if (changePasswordForm) {
     changePasswordForm.addEventListener("submit", async function (e) {
@@ -471,6 +483,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
+  // --- USER PROFILE / NAVIGATION UPDATE ---
   const userInfo = document.getElementById("user-info");
   const loginLink = document.getElementById("login-link");
   const logoutLink = document.getElementById("logout-link");
@@ -502,6 +515,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (loginLink) loginLink.style.display = "inline-block";
     });
   
+  // --- ADMIN PAGE (Categories / Products Management) ---
   const categoriesTableBody = document.getElementById("categoriesTableBody");
   const productsTableBody = document.getElementById("productsTableBody");
   if (categoriesTableBody && productsTableBody) {
