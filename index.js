@@ -68,7 +68,7 @@ function verifyCsrfToken(req, res, next) {
   }
 
   const origin = req.get("Origin") || req.get("Referer");
-  if (origin && !origin.startsWith("http://localhost:3000")) {
+  if (origin && !origin.startsWith("http://52.65.170.10")) {
     return res.status(403).json({ error: "Blocked by CSRF origin check" });
   }
   next();
@@ -172,7 +172,7 @@ app.post("/login", verifyCsrfToken, (req, res) => {
       // Set authToken cookie with HttpOnly and Secure flags.
       res.cookie("authToken", token, {
         httpOnly: true,
-        secure: true, // Set to true in production when using HTTPS
+        secure: false, // Set to true in production when using HTTPS
         expires: new Date(Date.now() + SESSION_DURATION)
       });
 
