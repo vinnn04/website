@@ -113,23 +113,42 @@ class Cart {
     const storedList = localStorage.getItem("shoppingList");
     if (storedList) {
       const minimalList = JSON.parse(storedList);
-      Promise.all(
+  
+      // If no items, just clear cart
+      if (!minimalList.length) {
+        this.items = [];
+        this.updateDisplay();
+        return;
+      }
+  
+      Promise.allSettled(
         minimalList.map(item =>
           fetch(`/products?pid=${item.id}`)
             .then(response => {
               if (!response.ok) throw new Error("Failed to fetch product details");
               return response.json();
             })
-            .then(product => new CartItem(product.pid, product.name, product.price, item.quantity))
+            .then(product => {
+              if (!product || !product.pid || !product.name || isNaN(parseFloat(product.price))) {
+                throw new Error("Invalid product data");
+              }
+              return new CartItem(
+                parseInt(product.pid, 10),
+                product.name,
+                parseFloat(product.price),
+                item.quantity
+              );
+            })
         )
-      )
-      .then(fullItems => {
-        this.items = fullItems;
+      ).then(results => {
+        this.items = results
+          .filter(result => result.status === "fulfilled")
+          .map(result => result.value);
         this.updateDisplay();
-      })
-      .catch(error => console.error("Error loading shopping cart:", error));
-    } else {
-      this.updateDisplay();
+      });
+      } else {
+        this.items = [];
+        this.updateDisplay();
     }
   }
 
@@ -165,6 +184,35 @@ class Cart {
     if (shoppingListHeader) {
       shoppingListHeader.textContent = `Shopping List - $${total.toFixed(2)}`;
     }
+
+    // Attach event listeners to quantity controls
+    this.items.forEach(item => {
+      const decrementBtn = document.querySelector(`#cart-item-${item.id} .decrement`);
+      const incrementBtn = document.querySelector(`#cart-item-${item.id} .increment`);
+      const removeBtn = document.querySelector(`#cart-item-${item.id} .remove`);
+      const qtyInput = document.querySelector(`#cart-item-${item.id} input[type="number"]`);
+
+      if (decrementBtn) {
+        decrementBtn.addEventListener("click", () => this.decrementItem(item.id));
+      }
+      if (incrementBtn) {
+        incrementBtn.addEventListener("click", () => this.incrementItem(item.id));
+      }
+      if (removeBtn) {
+        removeBtn.addEventListener("click", () => this.removeItem(item.id));
+      }
+      if (qtyInput) {
+        qtyInput.addEventListener("change", (e) => {
+          const value = parseInt(e.target.value, 10);
+          if (isNaN(value) || value < 1) {
+            e.target.value = item.quantity; // Reset to previous valid value
+            alert("Please enter a valid quantity (1 or more).");
+          } else {
+            this.updateItemQuantity(item.id, value);
+          }
+        });
+      }
+    });
   }
 
   checkout() {
@@ -186,16 +234,6 @@ class Cart {
 
 const shoppingCart = new Cart();
 window.shoppingCart = shoppingCart;
-
-function addProductToCart(id, name, price, quantityInputId) {
-  const quantityInput = document.getElementById(quantityInputId);
-  const quantity = parseInt(quantityInput.value, 10);
-  if (isNaN(quantity) || quantity < 1) {
-    alert("Please enter a valid quantity!");
-    return;
-  }
-  shoppingCart.addItem(id, name, price, quantity);
-}
 
 /**************************************************
  * Product and Category Fetching Functions
@@ -297,6 +335,17 @@ function fetchProducts() {
     });
 }
 
+function addProductToCart(id, name, price, quantityInputId) {
+  const quantityInput = document.getElementById(quantityInputId);
+  let quantity = parseInt(quantityInput.value, 10);
+  if (isNaN(quantity) || quantity < 1) {
+    alert("Invalid quantity");
+    return;
+  }
+
+  shoppingCart.addItem(id, name, price, quantity);
+}
+
 function fetchProductDetails(pid) {
   fetch(`/products?pid=${pid}`)
     .then(response => {
@@ -358,6 +407,9 @@ function fetchProductDetails(pid) {
  * Page-Specific Logic (Login, Change Password, Admin, etc.)
  **************************************************/
 document.addEventListener("DOMContentLoaded", () => {
+  // Restore shopping cart from localStorage
+  shoppingCart.load();
+  
   // --- LOGIN PAGE ---
   const loginForm = document.getElementById("loginForm");
   if (loginForm) {
