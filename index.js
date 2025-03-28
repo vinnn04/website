@@ -65,10 +65,7 @@ app.use("/uploads", express.static("uploads"));
 // Categories Endpoints
 app.get("/categories", (req, res) => {
   db.query("SELECT * FROM categories", (err, results) => {
-    if (err) {
-      res.status(500).json({ error: "Error retrieving categories" });
-      return;
-    }
+    if (err) return next(err);
     res.json(results);
   });
 });
@@ -379,6 +376,14 @@ app.get("/", (req, res) => {
     `;
 
     res.send(html);
+  });
+});
+
+// Global fallback error handler
+app.use((err, req, res, next) => {
+  console.error("Internal Server Error:", err.stack);
+  res.status(500).json({
+    error: "Something went wrong. Please try again later."
   });
 });
 
