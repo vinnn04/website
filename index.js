@@ -165,7 +165,8 @@ app.post("/login", verifyCsrfToken, (req, res) => {
       sessions[token] = {
         userid: user.userid,
         email: user.email,
-        admin: user.admin === 1 || user.admin === true
+        admin: user.admin === 1 || user.admin === true,
+        createdAt: Date.now()
       };
 
       // Set authToken cookie with HttpOnly and Secure flags, plus expiration time.
@@ -200,14 +201,23 @@ app.get("/logout", (req, res) => {
 
 app.get("/profile", (req, res) => {
   const token = req.cookies.authToken;
-  if (token && sessions[token]) {
-    const user = sessions[token];
-    res.json({
-      email: user.email,
-      admin: user.admin === true || user.admin === 1
+  const session = sessions[token];
+
+  if (
+    token &&
+    session &&
+    Date.now() - session.createdAt < SESSION_DURATION
+  ) {
+    return res.json({
+      email: session.email,
+      admin: session.admin === true || session.admin === 1
     });
   } else {
-    res.status(401).json({
+    if (token) {
+      delete sessions[token];
+      res.clearCookie("authToken");
+    }
+    return res.status(401).json({
       email: "guest",
       admin: false
     });
@@ -483,86 +493,16 @@ app.delete(
   }
 );
 
-// ==================================================================
-// Serve the Homepage (for testing purposes)
-// ==================================================================
-app.get("/", (req, res) => {
-  db.query("SELECT * FROM products", (err, products) => {
-    if (err) {
-      res.status(500).send("Error retrieving data from the database.");
-      return;
-    }
-    let html = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Product List</title>
-        <style>
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            font-size: 18px;
-            text-align: left;
-          }
-          table th, table td {
-            padding: 12px;
-            border: 1px solid #ddd;
-          }
-          table th {
-            background-color: #f2f2f2;
-          }
-          img {
-            max-width: 100px;
-            height: auto;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>Products Table</h1>
-        <table>
-          <thead>
-            <tr>
-              <th>Product ID</th>
-              <th>Category ID</th>
-              <th>Name</th>
-              <th>Price</th>
-              <th>Description</th>
-              <th>Image</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
-    products.forEach((product) => {
-      html += `
-        <tr>
-          <td>${product.pid}</td>
-          <td>${product.catid}</td>
-          <td>${escapeHTML(product.name)}</td>
-          <td>${product.price}</td>
-          <td>${escapeHTML(product.description)}</td>
-          <td><img src="/${escapeHTML(product.thumbnail_path)}" alt="${escapeHTML(product.name)}"></td>
-        </tr>
-      `;
-    });
-    html += `
-          </tbody>
-        </table>
-      </body>
-      </html>
-    `;
-    res.send(html);
-  });
-});
-
 // Global fallback error handler
 app.use((err, req, res, next) => {
   console.error("Internal Server Error:", err.stack);
   res.status(500).json({
     error: "Something went wrong. Please try again later."
   });
+});
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "website.html"));
 });
 
 const PORT = 3000;
