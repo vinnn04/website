@@ -280,8 +280,6 @@ footer {
 .sidebar {
   width: 250px;
   padding: 15px;
-  background-color: #f2f2f2;
-  box-sizing: border-box;
 }
 
 .sidebar h3 {
@@ -574,8 +572,9 @@ footer {
 /* Layout wrapper: sidebar + main content side-by-side */
 .content-wrapper {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch; /* stretch children to same height */
   gap: 20px;
+  margin-top: 20px;
 }
 
 /* Main content area next to sidebar */
