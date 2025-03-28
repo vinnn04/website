@@ -4,17 +4,32 @@ const mysql = require("mysql2");
 const multer = require("multer");
 const path = require("path");
 const sharp = require("sharp");
+const { body, param, validationResult } = require("express-validator");
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
+app.use((req, res, next) => {
+  res.setHeader("Content-Security-Policy",
+    "default-src 'self'; " +
+    "script-src 'self'; " +
+    "object-src 'none'; " +
+    "base-uri 'none'; " +
+    "img-src 'self' data:; " +
+    "style-src 'self' 'unsafe-inline'; " + 
+    "frame-ancestors 'none'; " +
+    "upgrade-insecure-requests"
+  );
+  next();
+});
+
 // MySQL Database Connection
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "",              // Replace with MySQL password
-  database: "",          // Replace with database name
+  password: "y9451216A123!@#",              // Replace with MySQL password
+  database: "mydb",          // Replace with database name
 });
 
 db.connect((err) => {
@@ -58,108 +73,132 @@ app.get("/categories", (req, res) => {
   });
 });
 
-app.post("/categories", (req, res) => {
-  const { name } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: "Category name is required" });
-  }
-  db.query("INSERT INTO categories (name) VALUES (?)", [name], (err, result) => {
-    if (err) {
-      console.error("Database error while adding category:", err);
-      return res.status(500).json({ error: "Error adding category: " + err.message });
+app.post(
+  "/categories",
+  [
+    body("name")
+      .isLength({ min: 2, max: 100 })
+      .withMessage("Category name must be between 2 and 100 characters.")
+      .trim()
+      .escape()
+  ],
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-    res.json({ message: "Category added successfully", categoryId: result.insertId });
-  });
-});
 
-app.put('/categories/:catid', (req, res) => {
-  const catid = req.params.catid;
-  const { name } = req.body;
-  
-  if (!name) {
-    return res.status(400).json({ error: "Category name is required." });
-  }
-  
-  const sql = "UPDATE categories SET name = ? WHERE catid = ?";
-  db.query(sql, [name, catid], (err, result) => {
-    if (err) {
-      console.error("Error updating category:", err);
-      return res.status(500).json({ error: "Error updating category." });
-    }
-    res.json({ message: "Category updated successfully" });
-  });
-});
+    const { name } = req.body;
 
-app.delete('/categories/:catid', (req, res) => {
-  const catid = req.params.catid;
-  const sql = "DELETE FROM categories WHERE catid = ?";
-  db.query(sql, [catid], (err, result) => {
-    if (err) {
-      console.error("Error deleting category:", err);
-      return res.status(500).json({ error: "Error deleting category." });
+    const sql = "INSERT INTO categories (name) VALUES (?)";
+    db.query(sql, [name], (err, result) => {
+      if (err) {
+        console.error("Database error while adding category:", err);
+        return res.status(500).json({ error: "Error adding category to the database." });
+      }
+
+      res.json({
+        message: "Category added successfully",
+        categoryId: result.insertId
+      });
+    });
+  }
+);
+
+app.put(
+  "/categories/:catid",
+  [
+    param("catid").isInt({ gt: 0 }).withMessage("Invalid Category ID"),
+    body("name")
+      .isLength({ min: 2, max: 100 })
+      .withMessage("Category name must be 2–100 characters")
+      .trim()
+      .escape(),
+  ],
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-    res.json({ message: "Category deleted successfully" });
-  });
-});
+
+    const catid = parseInt(req.params.catid);
+    const { name } = req.body;
+
+    const sql = "UPDATE categories SET name = ? WHERE catid = ?";
+    db.query(sql, [name, catid], (err, result) => {
+      if (err) {
+        console.error("Error updating category:", err);
+        return res.status(500).json({ error: "Error updating category" });
+      }
+      res.json({ message: "Category updated successfully" });
+    });
+  }
+);
+
+app.delete(
+  "/categories/:catid",
+  [param("catid").isInt({ gt: 0 }).withMessage("Invalid Category ID")],
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const catid = parseInt(req.params.catid);
+    const sql = "DELETE FROM categories WHERE catid = ?";
+    db.query(sql, [catid], (err, result) => {
+      if (err) {
+        console.error("Error deleting category:", err);
+        return res.status(500).json({ error: "Error deleting category." });
+      }
+      res.json({ message: "Category deleted successfully" });
+    });
+  }
+);
 
 // Products Endpoints
 
-app.post("/products", upload.single("image"), async (req, res) => {
-  const { catid, name, price, description } = req.body;
-  const image = req.file ? `uploads/${req.file.filename}` : null;
-  const thumbnail = req.file ? `uploads/thumbnail-${req.file.filename}.jpg` : null;
+app.post(
+  "/products",
+  upload.single("image"),
+  [
+    body("catid").isInt({ gt: 0 }).withMessage("Invalid Category ID"),
+    body("name").isLength({ min: 3, max: 100 }).trim().escape(),
+    body("price").isFloat({ gt: 0 }).withMessage("Price must be positive"),
+    body("description").isLength({ min: 5, max: 500 }).trim().escape()
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-  // Input Validation
-  let errors = [];
+    const { catid, name, price, description } = req.body;
+    const image = req.file ? `uploads/${req.file.filename}` : null;
+    const thumbnail = req.file ? `uploads/thumbnail-${req.file.filename}.jpg` : null;
 
-  if (!catid || isNaN(catid) || parseInt(catid) < 1) {
-    errors.push("Category ID must be a number greater than 0.");
-  }
+    if (!image) {
+      return res.status(400).json({ error: "Product image is required." });
+    }
 
-  if (!name || name.length < 3 || name.length > 100) {
-    errors.push("Product name must be between 3 and 100 characters.");
-  }
-
-  if (!price || isNaN(price) || parseFloat(price) <= 0) {
-    errors.push("Price must be a positive number.");
-  }
-
-  if (!description || description.length < 5 || description.length > 500) {
-    errors.push("Description must be between 5 and 500 characters.");
-  }
-
-  if (!image) {
-    errors.push("Product image is required.");
-  }
-
-  if (errors.length > 0) {
-    return res.status(400).json({ errors });
-  }
-
-  if (req.file) {
     try {
       await sharp(req.file.path)
         .resize(200, 200, { fit: 'inside' })
         .toFile(thumbnail);
     } catch (resizeError) {
-      console.error("Error resizing image:", resizeError);
       return res.status(500).json({ error: "Error processing image." });
     }
-  }
 
-  // Insert Data into the Database (make sure your products table has a thumbnail_path column)
-  db.query(
-    "INSERT INTO products (catid, name, price, description, image_path, thumbnail_path) VALUES (?, ?, ?, ?, ?, ?)",
-    [catid, name, price, description, image, thumbnail],
-    (err, result) => {
-      if (err) {
-        console.error("Database Error:", err);
-        return res.status(500).json({ error: "Error adding product to the database." });
+    db.query(
+      "INSERT INTO products (catid, name, price, description, image_path, thumbnail_path) VALUES (?, ?, ?, ?, ?, ?)",
+      [catid, name, price, description, image, thumbnail],
+      (err, result) => {
+        if (err) return res.status(500).json({ error: "Database error." });
+        res.json({ message: "Product added successfully!", productId: result.insertId });
       }
-      res.json({ message: "Product added successfully!", productId: result.insertId });
-    }
-  );
-});
+    );
+  }
+);
 
 // GET /products - Retrieve products or details for a single product if pid is provided
 app.get("/products", (req, res) => {
@@ -195,35 +234,76 @@ app.get("/products", (req, res) => {
   }
 });
 
-app.put('/products/:pid', (req, res) => {
-  const pid = req.params.pid;
-  const { catid, name, price, description } = req.body;
+app.put(
+  "/products/:pid",
+  [
+    param("pid").isInt({ gt: 0 }).withMessage("Invalid Product ID"),
+    body("catid").isInt({ gt: 0 }).withMessage("Category ID must be a positive number"),
+    body("name").isLength({ min: 3, max: 100 }).withMessage("Name must be 3–100 characters").trim().escape(),
+    body("price").isFloat({ gt: 0 }).withMessage("Price must be a positive number"),
+    body("description").isLength({ min: 5, max: 500 }).withMessage("Description must be 5–500 characters").trim().escape(),
+  ],
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-  if (!catid || !name || !price || !description) {
-    return res.status(400).json({ error: "All fields (catid, name, price, description) are required." });
+    const pid = parseInt(req.params.pid);
+    const { catid, name, price, description } = req.body;
+
+    const sql = "UPDATE products SET catid = ?, name = ?, price = ?, description = ? WHERE pid = ?";
+    db.query(sql, [catid, name, price, description, pid], (err, result) => {
+      if (err) {
+        console.error("Error updating product:", err);
+        return res.status(500).json({ error: "Error updating product" });
+      }
+      res.json({ message: "Product updated successfully" });
+    });
   }
+);
 
-  const sql = "UPDATE products SET catid = ?, name = ?, price = ?, description = ? WHERE pid = ?";
-  db.query(sql, [catid, name, price, description, pid], (err, result) => {
-    if (err) {
-      console.error("Error updating product:", err);
-      return res.status(500).json({ error: "Error updating product" });
+app.delete(
+  "/products/:pid",
+  [
+    param("pid")
+      .isInt({ gt: 0 })
+      .withMessage("Product ID must be a positive integer")
+      .toInt()
+  ],
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-    res.json({ message: "Product updated successfully" });
-  });
-});
 
-app.delete('/products/:pid', (req, res) => {
-  const pid = req.params.pid;
-  const sql = "DELETE FROM products WHERE pid = ?";
-  db.query(sql, [pid], (err, result) => {
-    if (err) {
-      console.error("Error deleting product:", err);
-      return res.status(500).json({ error: "Error deleting product" });
-    }
-    res.json({ message: "Product deleted successfully" });
-  });
-});
+    const pid = req.params.pid;
+
+    const sql = "DELETE FROM products WHERE pid = ?";
+    db.query(sql, [pid], (err, result) => {
+      if (err) {
+        console.error("Error deleting product:", err);
+        return res.status(500).json({ error: "Error deleting product" });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      res.json({ message: "Product deleted successfully" });
+    });
+  }
+);
+
+function escapeHTML(str) {
+  return String(str).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
 
 // Serve the Homepage - List All Products in a Table (for testing purposes)
 app.get("/", (req, res) => {
@@ -283,10 +363,10 @@ app.get("/", (req, res) => {
         <tr>
           <td>${product.pid}</td>
           <td>${product.catid}</td>
-          <td>${product.name}</td>
+          <td>${escapeHTML(product.name)}</td>
           <td>${product.price}</td>
-          <td>${product.description}</td>
-          <td><img src="/${product.thumbnail_path}" alt="${product.name}"></td>
+          <td>${escapeHTML(product.description)}</td>
+          <td><img src="/${escapeHTML(product.thumbnail_path)}" alt="${escapeHTML(product.name)}"></td>
         </tr>
       `;
     });
@@ -306,3 +386,6 @@ const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}/`);
 });
+
+const helmet = require("helmet");
+app.use(helmet());

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel - Manage Categories & Products</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    h1, h2 {
+      margin-top: 40px;
+    }
+
+    form {
+      margin-bottom: 20px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      padding: 5px;
+      width: 300px;
+      max-width: 100%;
+      margin-bottom: 10px;
+    }
+
+    textarea {
+      height: 100px;
+    }
+
+    button {
+      padding: 5px 10px;
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .section {
+      margin-bottom: 60px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+  </style>
+
+  <script>
+    async function loadCategories() {
+      try {
+        const response = await fetch('/categories');
+        const categories = await response.json();
+
+        // Populate categories table
+        const tableBody = document.getElementById('categoriesTableBody');
+        if (tableBody) {
+          tableBody.innerHTML = "";
+          categories.forEach(category => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${category.catid}</td>
+              <td>${category.name}</td>
+              <td>
+                <button onclick="editCategory(${category.catid}, '${category.name}')">Edit</button>
+                <button onclick="deleteCategory(${category.catid})">Delete</button>
+              </td>
+            `;
+            tableBody.appendChild(row);
+          });
+        }
+
+        // Populate product category dropdown
+        const dropdown = document.getElementById('catid');
+        if (dropdown) {
+          dropdown.innerHTML = '<option value="" disabled selected>Select a category</option>';
+          categories.forEach((category) => {
+            const option = document.createElement('option');
+            option.value = category.catid;
+            option.textContent = category.name;
+            dropdown.appendChild(option);
+          });
+        }
+
+      } catch (error) {
+        console.error("Error loading categories:", error);
+        alert("Unable to load categories.");
+      }
+    }
+
+    async function handleAddCategory(e) {
+      e.preventDefault();
+      const nameInput = document.getElementById('categoryName');
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert("Please enter a category name.");
+        return;
+      }
+      try {
+        const response = await fetch('/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          alert("Category added successfully!");
+          nameInput.value = "";
+          loadCategories();
+        } else {
+          alert("Error adding category: " + (data.error || JSON.stringify(data)));
+        }
+      } catch (error) {
+        console.error("Error adding category:", error);
+        alert("Error adding category.");
+      }
+    }
+
+    async function editCategory(catId, currentName) {
+      const newName = prompt("Enter the new category name:", currentName);
+      if (!newName || newName.trim() === "") {
+        alert("Category name cannot be empty.");
+        return;
+      }
+      try {
+        const response = await fetch(`/categories/${catId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name: newName.trim() })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          alert("Category updated successfully!");
+          loadCategories();
+        } else {
+          alert("Error updating category: " + (data.error || ""));
+        }
+      } catch (error) {
+        console.error("Error updating category:", error);
+        alert("Error updating category.");
+      }
+    }
+
+    async function deleteCategory(catId) {
+      if (!confirm("Are you sure you want to delete this category?")) return;
+      try {
+        const response = await fetch(`/categories/${catId}`, {
+          method: 'DELETE'
+        });
+        const data = await response.json();
+        if (response.ok) {
+          alert("Category deleted successfully!");
+          loadCategories();
+        } else {
+          alert("Error deleting category: " + (data.error || ""));
+        }
+      } catch (error) {
+        console.error("Error deleting category:", error);
+        alert("Error deleting category.");
+      }
+    }
+
+    async function loadProducts() {
+      try {
+        const response = await fetch('/products');
+        const products = await response.json();
+        const tableBody = document.getElementById('productsTableBody');
+        tableBody.innerHTML = "";
+        products.forEach(product => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${product.pid}</td>
+            <td>${product.catid}</td>
+            <td>${product.name}</td>
+            <td>$${product.price}</td>
+            <td>${product.description}</td>
+            <td>
+              <button onclick="editProduct(${product.pid})">Edit</button>
+              <button onclick="deleteProduct(${product.pid})">Delete</button>
+            </td>
+          `;
+          tableBody.appendChild(row);
+        });
+      } catch (error) {
+        console.error("Error loading products:", error);
+      }
+    }
+
+    async function editProduct(pid) {
+      try {
+        const name = prompt("Enter new product name:");
+        if (!name) return;
+        const price = prompt("Enter new price:");
+        if (!price || isNaN(price)) return alert("Invalid price.");
+        const description = prompt("Enter new description:");
+        if (!description) return;
+        const catid = prompt("Enter new category id:");
+        if (!catid || isNaN(catid)) return alert("Invalid category id.");
+
+        const updatedProduct = {
+          name,
+          price: parseFloat(price),
+          description,
+          catid: parseInt(catid)
+        };
+
+        const response = await fetch(`/products/${pid}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedProduct)
+        });
+
+        if (response.ok) {
+          alert("Product updated successfully!");
+          loadProducts();
+        } else {
+          const errorData = await response.json();
+          alert("Failed to update product: " + errorData.error);
+        }
+      } catch (error) {
+        console.error("Error updating product:", error);
+      }
+    }
+
+    async function deleteProduct(pid) {
+      if (!confirm("Are you sure you want to delete this product?")) return;
+      try {
+        const response = await fetch(`/products/${pid}`, {
+          method: 'DELETE'
+        });
+        if (response.ok) {
+          alert("Product deleted successfully!");
+          loadProducts();
+        } else {
+          const errorData = await response.json();
+          alert("Failed to delete product: " + errorData.error);
+        }
+      } catch (error) {
+        console.error("Error deleting product:", error);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("categoryForm").addEventListener("submit", handleAddCategory);
+      loadCategories();
+      loadProducts();
+    });
+  </script>
+</head>
+<body>
+
+  <!-- Category Management -->
+  <div class="section">
+    <h1>Manage Categories</h1>
+    <form id="categoryForm">
+      <div class="form-group">
+        <label for="categoryName">Category Name:</label><br/>
+        <input type="text" id="categoryName" name="name" required>
+      </div>
+      <button type="submit">Add Category</button>
+    </form>
+
+    <h2>Existing Categories</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>CatID</th>
+          <th>Name</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="categoriesTableBody">
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Product Management -->
+  <div class="section">
+    <h1>Add a New Product</h1>
+    <form id="productForm" action="/products" method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="catid">Category:</label><br/>
+        <select id="catid" name="catid" required></select>
+      </div>
+
+      <div class="form-group">
+        <label for="name">Product Name:</label><br/>
+        <input type="text" id="name" name="name" required minlength="3" maxlength="100" placeholder="Enter Product Name">
+      </div>
+
+      <div class="form-group">
+        <label for="price">Price:</label><br/>
+        <input type="number" id="price" name="price" required step="0.01" min="0.01" placeholder="Enter Price">
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description:</label><br/>
+        <textarea id="description" name="description" required minlength="5" maxlength="500" placeholder="Enter Product Description"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="image">Product Image:</label><br/>
+        <input type="file" id="image" name="image" required accept="image/png, image/jpeg, image/jpg">
+      </div>
+
+      <button type="submit">Add Product</button>
+    </form>
+
+    <h2>Manage Products</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Product ID</th>
+          <th>Category ID</th>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="productsTableBody">
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
