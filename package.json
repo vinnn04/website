@@ -21,6 +21,7 @@
   "homepage": "https://github.com/vinnn04/website#readme",
   "dependencies": {
     "body-parser": "^1.20.3",
+    "cookie-parser": "^1.4.7",
     "express": "^4.21.2",
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0",

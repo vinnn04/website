@@ -5,10 +5,38 @@ const multer = require("multer");
 const path = require("path");
 const sharp = require("sharp");
 const { body, param, validationResult } = require("express-validator");
+const cookieParser = require("cookie-parser");
+const crypto = require("crypto");
+const helmet = require("helmet");
 
 const app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.json());
+
+
+app.use(helmet()); // Sets various HTTP headers for security
+app.use(cookieParser()); // Parses cookies
+app.use(bodyParser.urlencoded({ extended: true })); // Parses form data
+app.use(express.json()); // Parses JSON bodies
+
+
+app.use(express.static("public"));
+app.use("/uploads", express.static("uploads"));
+
+
+app.use((req, res, next) => {
+  if (!req.cookies.csrfToken) {
+    const token = crypto.randomBytes(32).toString("hex");
+    res.cookie("csrfToken", token, {
+      httpOnly: false,
+      sameSite: "Strict",
+      secure: false // Set to true in production if using HTTPS
+    });
+    req.csrfToken = token;
+  } else {
+    req.csrfToken = req.cookies.csrfToken;
+  }
+  next();
+});
+
 
 app.use((req, res, next) => {
   res.setHeader("Content-Security-Policy",
@@ -17,12 +45,28 @@ app.use((req, res, next) => {
     "object-src 'none'; " +
     "base-uri 'none'; " +
     "img-src 'self' data:; " +
-    "style-src 'self' 'unsafe-inline'; " + 
+    "style-src 'self' 'unsafe-inline'; " +
     "frame-ancestors 'none'; " +
     "upgrade-insecure-requests"
   );
   next();
 });
+
+function verifyCsrfToken(req, res, next) {
+  const tokenFromCookie = req.cookies.csrfToken;
+  const tokenFromBody = req.body.csrfToken || req.headers["x-csrf-token"];
+
+  if (!tokenFromCookie || !tokenFromBody || tokenFromCookie !== tokenFromBody) {
+    return res.status(403).json({ error: "Invalid CSRF token" });
+  }
+
+  const origin = req.get("Origin") || req.get("Referer");
+  if (origin && !origin.startsWith("http://localhost:3000")) {
+    return res.status(403).json({ error: "Blocked by CSRF origin check" });
+  }
+
+  next();
+}
 
 // MySQL Database Connection
 const db = mysql.createConnection({
@@ -57,13 +101,10 @@ const upload = multer({
   },
 });
 
-// Serve Static Files
-app.use(express.static("public"));
-app.use("/uploads", express.static("uploads"));
 
 
 // Categories Endpoints
-app.get("/categories", (req, res) => {
+app.get("/categories", (req, res, next) => {
   db.query("SELECT * FROM categories", (err, results) => {
     if (err) return next(err);
     res.json(results);
@@ -72,6 +113,7 @@ app.get("/categories", (req, res) => {
 
 app.post(
   "/categories",
+  verifyCsrfToken,
   [
     body("name")
       .isLength({ min: 2, max: 100 })
@@ -103,7 +145,7 @@ app.post(
 );
 
 app.put(
-  "/categories/:catid",
+  "/categories/:catid", verifyCsrfToken,
   [
     param("catid").isInt({ gt: 0 }).withMessage("Invalid Category ID"),
     body("name")
@@ -133,7 +175,7 @@ app.put(
 );
 
 app.delete(
-  "/categories/:catid",
+  "/categories/:catid", verifyCsrfToken,
   [param("catid").isInt({ gt: 0 }).withMessage("Invalid Category ID")],
   (req, res) => {
     const errors = validationResult(req);
@@ -156,7 +198,7 @@ app.delete(
 // Products Endpoints
 
 app.post(
-  "/products",
+  "/products", verifyCsrfToken,
   upload.single("image"),
   [
     body("catid").isInt({ gt: 0 }).withMessage("Invalid Category ID"),
@@ -232,7 +274,7 @@ app.get("/products", (req, res) => {
 });
 
 app.put(
-  "/products/:pid",
+  "/products/:pid", verifyCsrfToken,
   [
     param("pid").isInt({ gt: 0 }).withMessage("Invalid Product ID"),
     body("catid").isInt({ gt: 0 }).withMessage("Category ID must be a positive number"),
@@ -261,7 +303,7 @@ app.put(
 );
 
 app.delete(
-  "/products/:pid",
+  "/products/:pid", verifyCsrfToken,
   [
     param("pid")
       .isInt({ gt: 0 })
@@ -391,6 +433,3 @@ const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}/`);
 });
-
-const helmet = require("helmet");
-app.use(helmet());

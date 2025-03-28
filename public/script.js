@@ -346,6 +346,13 @@ function updateQueryStringParameter(uri, key, value) {
   }
 }
 
+function getCsrfToken() {
+  return document.cookie
+    .split("; ")
+    .find(row => row.startsWith("csrfToken="))
+    ?.split("=")[1];
+}
+
 shoppingCart.load();
 
 document.addEventListener("DOMContentLoaded", () => {
