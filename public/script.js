@@ -22,7 +22,6 @@ class Cart {
     this.items = [];
   }
 
-  // Add product to cart; if it exists, increment the quantity
   addItem(id, name, price, quantity) {
     const existingItem = this.items.find(item => item.id === id);
     if (existingItem) {
@@ -34,7 +33,6 @@ class Cart {
     this.updateDisplay();
   }
 
-  // Update item quantity to a specified value
   updateItemQuantity(id, quantity) {
     quantity = parseInt(quantity, 10);
     if (isNaN(quantity) || quantity < 1) {
@@ -49,7 +47,6 @@ class Cart {
     }
   }
 
-  // Increment the item quantity by 1
   incrementItem(id) {
     const item = this.items.find(item => item.id === id);
     if (item) {
@@ -59,7 +56,6 @@ class Cart {
     }
   }
 
-  // Decrement the item quantity by 1 (or remove the item if it reaches 0)
   decrementItem(id) {
     const item = this.items.find(item => item.id === id);
     if (item) {
@@ -74,19 +70,16 @@ class Cart {
     }
   }
 
-  // Remove an item from the cart
   removeItem(id) {
     this.items = this.items.filter(item => item.id !== id);
     this.save();
     this.updateDisplay();
   }
 
-  // Calculate the total price of the cart
   getTotal() {
     return this.items.reduce((total, item) => total + item.price * item.quantity, 0);
   }
 
-  // Save minimal cart data (only id and quantity) to localStorage
   save() {
     const minimalList = this.items.map(item => ({
       id: item.id,
@@ -95,7 +88,6 @@ class Cart {
     localStorage.setItem("shoppingList", JSON.stringify(minimalList));
   }
 
-  // Load cart data from localStorage and fetch full product details
   load() {
     const storedList = localStorage.getItem("shoppingList");
     if (storedList) {
@@ -104,14 +96,10 @@ class Cart {
         minimalList.map(item =>
           fetch(`/products?pid=${item.id}`)
             .then(response => {
-              if (!response.ok) {
-                throw new Error("Failed to fetch product details");
-              }
+              if (!response.ok) throw new Error("Failed to fetch product details");
               return response.json();
             })
-            .then(product => {
-              return new CartItem(product.pid, product.name, product.price, item.quantity);
-            })
+            .then(product => new CartItem(product.pid, product.name, product.price, item.quantity))
         )
       )
       .then(fullItems => {
@@ -124,7 +112,6 @@ class Cart {
     }
   }
 
-  // Update the shopping cart display in the UI
   updateDisplay() {
     const shoppingListItems = document.getElementById("shopping-list-items");
     const shoppingListTotal = document.getElementById("shopping-list-total");
@@ -153,7 +140,6 @@ class Cart {
     shoppingListHeader.textContent = `Shopping List - $${total.toFixed(2)}`;
   }
 
-  // Clear the cart on checkout
   checkout() {
     if (this.items.length === 0) {
       alert("Your shopping list is empty. Please add items to proceed.");
@@ -172,7 +158,6 @@ class Cart {
 }
 
 const shoppingCart = new Cart();
-
 window.shoppingCart = shoppingCart;
 
 function addProductToCart(id, name, price, quantityInputId) {
@@ -292,9 +277,9 @@ function fetchProductDetails(pid) {
 
       let imagePath;
       if (product.image_path) {
-        imagePath = '/' + escapeHTML(product.image_path); // Use uploaded image
+        imagePath = '/' + escapeHTML(product.image_path);
       } else {
-        imagePath = `/images/product${product.pid}.jpg`; // Fallback to static image
+        imagePath = `/images/product${product.pid}.jpg`;
       }
       const productName = escapeHTML(product.name);
       const description = escapeHTML(product.description);
@@ -336,6 +321,13 @@ function fetchProductDetails(pid) {
     });
 }
 
+function getCsrfToken() {
+  return document.cookie
+    .split("; ")
+    .find(row => row.startsWith("csrfToken="))
+    ?.split("=")[1];
+}
+
 function updateQueryStringParameter(uri, key, value) {
   let re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
   let separator = uri.indexOf('?') !== -1 ? "&" : "?";
@@ -346,23 +338,77 @@ function updateQueryStringParameter(uri, key, value) {
   }
 }
 
-function getCsrfToken() {
-  return document.cookie
-    .split("; ")
-    .find(row => row.startsWith("csrfToken="))
-    ?.split("=")[1];
-}
-
+// Load cart and fetch initial data
 shoppingCart.load();
 
 document.addEventListener("DOMContentLoaded", () => {
+  const userInfo = document.getElementById("user-info");
+  const loginLink = document.getElementById("login-link");
+  const logoutLink = document.getElementById("logout-link");
+  const logoutButton = document.getElementById("logout-button");
+  const changePasswordLink = document.getElementById("change-password-link");
+
+  fetch("/profile", { credentials: "include" })
+    .then(res => {
+      if (!res.ok) throw new Error("Not logged in");
+      return res.json();
+    })
+    .then(data => {
+      if (data.email && data.email !== "guest") {
+        const role = data.admin ? "admin" : "user";
+        if (userInfo) userInfo.textContent = "Logged in as: " + role;
+        if (logoutLink) logoutLink.style.display = "inline-block";
+        if (changePasswordLink) changePasswordLink.style.display = "inline-block";
+        if (loginLink) loginLink.style.display = "none";
+      } else {
+        if (userInfo) userInfo.textContent = "Logged in as: guest";
+        if (logoutLink) logoutLink.style.display = "none";
+        if (changePasswordLink) changePasswordLink.style.display = "none";
+        if (loginLink) loginLink.style.display = "inline-block";
+      }
+    })
+    .catch(() => {
+      if (userInfo) userInfo.textContent = "Logged in as: guest";
+      if (logoutLink) logoutLink.style.display = "none";
+      if (changePasswordLink) changePasswordLink.style.display = "none";
+      if (loginLink) loginLink.style.display = "inline-block";
+    });
+
   fetchCategories();
+
   const urlParams = new URLSearchParams(window.location.search);
   const pid = parseInt(urlParams.get('pid'), 10);
   if (!isNaN(pid)) {
     fetchProductDetails(pid);
   } else {
     fetchProducts();
+  }
+
+  const btn = document.getElementById("checkout-button");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      checkout();
+    });
+  }
+
+  if (logoutButton) {
+    logoutButton.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        const res = await fetch("/logout", {
+          method: "GET",
+          credentials: "include"
+        });
+        if (res.ok) {
+          window.location.href = "/website.html";
+        } else {
+          alert("Logout failed.");
+        }
+      } catch (err) {
+        console.error("Logout error:", err);
+        alert("An error occurred during logout.");
+      }
+    });
   }
 });
 

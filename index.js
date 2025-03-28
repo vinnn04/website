@@ -1,3 +1,4 @@
+"use strict";
 const express = require("express");
 const bodyParser = require("body-parser");
 const mysql = require("mysql2");
@@ -8,25 +9,29 @@ const { body, param, validationResult } = require("express-validator");
 const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
 const helmet = require("helmet");
+const bcrypt = require("bcrypt");
 
 const app = express();
 
+const SESSION_DURATION = 24 * 60 * 60 * 1000; // 1 day in ms
 
-app.use(helmet()); // Sets various HTTP headers for security
-app.use(cookieParser()); // Parses cookies
-app.use(bodyParser.urlencoded({ extended: true })); // Parses form data
-app.use(express.json()); // Parses JSON bodies
+// In-memory session store -> token: { userid, email, admin }
+const sessions = {};
 
+app.use(helmet());
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
-
+// CSRF token middleware
 app.use((req, res, next) => {
   if (!req.cookies.csrfToken) {
     const token = crypto.randomBytes(32).toString("hex");
     res.cookie("csrfToken", token, {
-      httpOnly: false,
+      httpOnly: false, // make available to JS for inclusion in AJAX calls
       sameSite: "Strict",
       secure: false // Set to true in production if using HTTPS
     });
@@ -37,7 +42,7 @@ app.use((req, res, next) => {
   next();
 });
 
-
+// Content Security Policy middleware
 app.use((req, res, next) => {
   res.setHeader("Content-Security-Policy",
     "default-src 'self'; " +
@@ -64,16 +69,34 @@ function verifyCsrfToken(req, res, next) {
   if (origin && !origin.startsWith("http://localhost:3000")) {
     return res.status(403).json({ error: "Blocked by CSRF origin check" });
   }
-
   next();
+}
+
+// Authentication middleware
+function requireAuth(req, res, next) {
+  const token = req.cookies.authToken;
+  if (!token || !sessions[token]) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  req.user = sessions[token];
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  requireAuth(req, res, () => {
+    if (!req.user.admin) {
+      return res.status(403).json({ error: "Forbidden: Admins only" });
+    }
+    next();
+  });
 }
 
 // MySQL Database Connection
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "y9451216A123!@#",              // Replace with MySQL password
-  database: "mydb",          // Replace with database name
+  password: "y9451216A123!@#", // Replace with your actual password
+  database: "mydb"           // Replace with your actual database name
 });
 
 db.connect((err) => {
@@ -101,9 +124,137 @@ const upload = multer({
   },
 });
 
+// Utility: Escape HTML
+function escapeHTML(str) {
+  return String(str).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
 
+// ==================================================================
+// USER AUTHENTICATION ENDPOINTS
+// ==================================================================
 
-// Categories Endpoints
+// POST /login - process login credentials
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required." });
+  }
+  db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+    if (err) {
+      console.error("Database error in login:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    if (results.length === 0) {
+      return res.status(401).json({ error: "Invalid email or password." });
+    }
+    const user = results[0];
+    try {
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) {
+        return res.status(401).json({ error: "Invalid email or password." });
+      }
+      // Successful login: regenerate session token to prevent session fixation
+      const token = crypto.randomBytes(32).toString("hex");
+      sessions[token] = {
+        userid: user.userid,
+        email: user.email,
+        admin: user.admin === 1 || user.admin === true
+      };
+
+      // Set authToken cookie with httpOnly and secure flags, plus an expiration time.
+      res.cookie("authToken", token, {
+        httpOnly: true,
+        secure: true, // set true in production with HTTPS
+        expires: new Date(Date.now() + SESSION_DURATION)
+      });
+
+      // Redirect based on role: admin gets admin panel; otherwise main page.
+      if (sessions[token].admin) {
+        res.json({ message: "Login successful", redirect: "/admin.html" });
+      } else {
+        res.json({ message: "Login successful", redirect: "/website.html" });
+      }
+    } catch (bcryptErr) {
+      console.error("Error comparing passwords:", bcryptErr);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+});
+
+// GET /logout - clear authentication token and cookie
+app.get("/logout", (req, res) => {
+  const token = req.cookies.authToken;
+  if (token && sessions[token]) {
+    delete sessions[token];
+  }
+  res.clearCookie("authToken");
+  res.json({ message: "Logged out successfully" });
+});
+
+app.get("/profile", (req, res) => {
+  const token = req.cookies.authToken;
+  if (token && sessions[token]) {
+    const user = sessions[token];
+    res.json({
+      email: user.email,
+      admin: user.admin === true || user.admin === 1
+    });
+  } else {
+    res.status(401).json({
+      email: "guest",
+      admin: false
+    });
+  }
+});
+
+// POST /change-password - update password (requires current password verification)
+// After a successful change, the user is logged out.
+app.post("/change-password", requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: "Both current and new password are required." });
+  }
+  const token = req.cookies.authToken;
+  const userSession = sessions[token];
+
+  db.query("SELECT * FROM users WHERE userid = ?", [userSession.userid], async (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(500).json({ error: "User not found." });
+    }
+    const user = results[0];
+    try {
+      const match = await bcrypt.compare(currentPassword, user.password);
+      if (!match) {
+        return res.status(401).json({ error: "Current password is incorrect." });
+      }
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      db.query("UPDATE users SET password = ? WHERE userid = ?", [hashedPassword, user.userid], (updateErr, updateResult) => {
+        if (updateErr) {
+          return res.status(500).json({ error: "Failed to update password." });
+        }
+        // Log out the user after the password has been changed
+        delete sessions[token];
+        res.clearCookie("authToken");
+        res.json({ message: "Password updated successfully, please login again." });
+      });
+    } catch (hashErr) {
+      return res.status(500).json({ error: "Internal server error." });
+    }
+  });
+});
+
+// ==================================================================
+// CATEGORIES ENDPOINTS
+// ==================================================================
+
+// GET /categories - public access to view categories
 app.get("/categories", (req, res, next) => {
   db.query("SELECT * FROM categories", (err, results) => {
     if (err) return next(err);
@@ -111,8 +262,10 @@ app.get("/categories", (req, res, next) => {
   });
 });
 
+// Admin-protected endpoints for managing categories.
 app.post(
   "/categories",
+  requireAdmin,
   verifyCsrfToken,
   [
     body("name")
@@ -126,16 +279,13 @@ app.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
     const { name } = req.body;
-
     const sql = "INSERT INTO categories (name) VALUES (?)";
     db.query(sql, [name], (err, result) => {
       if (err) {
         console.error("Database error while adding category:", err);
         return res.status(500).json({ error: "Error adding category to the database." });
       }
-
       res.json({
         message: "Category added successfully",
         categoryId: result.insertId
@@ -145,7 +295,9 @@ app.post(
 );
 
 app.put(
-  "/categories/:catid", verifyCsrfToken,
+  "/categories/:catid",
+  requireAdmin,
+  verifyCsrfToken,
   [
     param("catid").isInt({ gt: 0 }).withMessage("Invalid Category ID"),
     body("name")
@@ -159,10 +311,8 @@ app.put(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
     const catid = parseInt(req.params.catid);
     const { name } = req.body;
-
     const sql = "UPDATE categories SET name = ? WHERE catid = ?";
     db.query(sql, [name, catid], (err, result) => {
       if (err) {
@@ -175,14 +325,15 @@ app.put(
 );
 
 app.delete(
-  "/categories/:catid", verifyCsrfToken,
+  "/categories/:catid",
+  requireAdmin,
+  verifyCsrfToken,
   [param("catid").isInt({ gt: 0 }).withMessage("Invalid Category ID")],
   (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
     const catid = parseInt(req.params.catid);
     const sql = "DELETE FROM categories WHERE catid = ?";
     db.query(sql, [catid], (err, result) => {
@@ -195,51 +346,11 @@ app.delete(
   }
 );
 
-// Products Endpoints
+// ==================================================================
+// PRODUCTS ENDPOINTS
+// ==================================================================
 
-app.post(
-  "/products", verifyCsrfToken,
-  upload.single("image"),
-  [
-    body("catid").isInt({ gt: 0 }).withMessage("Invalid Category ID"),
-    body("name").isLength({ min: 3, max: 100 }).trim().escape(),
-    body("price").isFloat({ gt: 0 }).withMessage("Price must be positive"),
-    body("description").isLength({ min: 5, max: 500 }).trim().escape()
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { catid, name, price, description } = req.body;
-    const image = req.file ? `uploads/${req.file.filename}` : null;
-    const thumbnail = req.file ? `uploads/thumbnail-${req.file.filename}.jpg` : null;
-
-    if (!image) {
-      return res.status(400).json({ error: "Product image is required." });
-    }
-
-    try {
-      await sharp(req.file.path)
-        .resize(200, 200, { fit: 'inside' })
-        .toFile(thumbnail);
-    } catch (resizeError) {
-      return res.status(500).json({ error: "Error processing image." });
-    }
-
-    db.query(
-      "INSERT INTO products (catid, name, price, description, image_path, thumbnail_path) VALUES (?, ?, ?, ?, ?, ?)",
-      [catid, name, price, description, image, thumbnail],
-      (err, result) => {
-        if (err) return res.status(500).json({ error: "Database error." });
-        res.json({ message: "Product added successfully!", productId: result.insertId });
-      }
-    );
-  }
-);
-
-// GET /products - Retrieve products or details for a single product if pid is provided
+// GET /products - public access; supports a query parameter "pid" or "catid"
 app.get("/products", (req, res) => {
   if (req.query.pid) {
     const pid = parseInt(req.query.pid);
@@ -257,12 +368,10 @@ app.get("/products", (req, res) => {
     let catid = parseInt(req.query.catid);
     let query = "SELECT * FROM products";
     let params = [];
-
     if (catid) {
       query += " WHERE catid = ?";
       params.push(catid);
     }
-
     db.query(query, params, (err, results) => {
       if (err) {
         console.error("Error retrieving products:", err);
@@ -273,8 +382,51 @@ app.get("/products", (req, res) => {
   }
 });
 
+// Admin-protected endpoints for managing products.
+app.post(
+  "/products",
+  requireAdmin,
+  verifyCsrfToken,
+  upload.single("image"),
+  [
+    body("catid").isInt({ gt: 0 }).withMessage("Invalid Category ID"),
+    body("name").isLength({ min: 3, max: 100 }).trim().escape(),
+    body("price").isFloat({ gt: 0 }).withMessage("Price must be positive"),
+    body("description").isLength({ min: 5, max: 500 }).trim().escape()
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { catid, name, price, description } = req.body;
+    const image = req.file ? `uploads/${req.file.filename}` : null;
+    const thumbnail = req.file ? `uploads/thumbnail-${req.file.filename}.jpg` : null;
+    if (!image) {
+      return res.status(400).json({ error: "Product image is required." });
+    }
+    try {
+      await sharp(req.file.path)
+        .resize(200, 200, { fit: 'inside' })
+        .toFile(thumbnail);
+    } catch (resizeError) {
+      return res.status(500).json({ error: "Error processing image." });
+    }
+    db.query(
+      "INSERT INTO products (catid, name, price, description, image_path, thumbnail_path) VALUES (?, ?, ?, ?, ?, ?)",
+      [catid, name, price, description, image, thumbnail],
+      (err, result) => {
+        if (err) return res.status(500).json({ error: "Database error." });
+        res.json({ message: "Product added successfully!", productId: result.insertId });
+      }
+    );
+  }
+);
+
 app.put(
-  "/products/:pid", verifyCsrfToken,
+  "/products/:pid",
+  requireAdmin,
+  verifyCsrfToken,
   [
     param("pid").isInt({ gt: 0 }).withMessage("Invalid Product ID"),
     body("catid").isInt({ gt: 0 }).withMessage("Category ID must be a positive number"),
@@ -287,10 +439,8 @@ app.put(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
     const pid = parseInt(req.params.pid);
     const { catid, name, price, description } = req.body;
-
     const sql = "UPDATE products SET catid = ?, name = ?, price = ?, description = ? WHERE pid = ?";
     db.query(sql, [catid, name, price, description, pid], (err, result) => {
       if (err) {
@@ -303,7 +453,9 @@ app.put(
 );
 
 app.delete(
-  "/products/:pid", verifyCsrfToken,
+  "/products/:pid",
+  requireAdmin,
+  verifyCsrfToken,
   [
     param("pid")
       .isInt({ gt: 0 })
@@ -315,44 +467,30 @@ app.delete(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
     const pid = req.params.pid;
-
     const sql = "DELETE FROM products WHERE pid = ?";
     db.query(sql, [pid], (err, result) => {
       if (err) {
         console.error("Error deleting product:", err);
         return res.status(500).json({ error: "Error deleting product" });
       }
-
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: "Product not found" });
       }
-
       res.json({ message: "Product deleted successfully" });
     });
   }
 );
 
-function escapeHTML(str) {
-  return String(str).replace(/[&<>"']/g, (char) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  }[char]));
-}
-
-// Serve the Homepage - List All Products in a Table (for testing purposes)
+// ==================================================================
+// Serve the Homepage (for testing purposes)
+// ==================================================================
 app.get("/", (req, res) => {
   db.query("SELECT * FROM products", (err, products) => {
     if (err) {
       res.status(500).send("Error retrieving data from the database.");
       return;
     }
-
-    // Generate HTML to display the products data
     let html = `
       <!DOCTYPE html>
       <html lang="en">
@@ -396,7 +534,6 @@ app.get("/", (req, res) => {
           </thead>
           <tbody>
     `;
-
     products.forEach((product) => {
       html += `
         <tr>
@@ -409,15 +546,62 @@ app.get("/", (req, res) => {
         </tr>
       `;
     });
-
     html += `
           </tbody>
         </table>
       </body>
       </html>
     `;
-
     res.send(html);
+  });
+});
+
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required." });
+  }
+  db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+    if (err) {
+      console.error("Database error in login:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    if (results.length === 0) {
+      // No user found with this email
+      return res.status(401).json({ error: "Invalid email or password." });
+    }
+    const user = results[0];
+    try {
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) {
+        // Password is incorrect
+        return res.status(401).json({ error: "Invalid email or password." });
+      }
+      // Successful login: rotate the session token to prevent session fixation attacks
+      const token = crypto.randomBytes(32).toString("hex");
+      sessions[token] = {
+        userid: user.userid,
+        email: user.email,
+        admin: user.admin === 1 || user.admin === true
+      };
+
+      // Set the auth cookie with HttpOnly and Secure flags with an expiration time (e.g., less than 3 days)
+      res.cookie("authToken", token, {
+        httpOnly: true,
+        secure: true, // Change to true in production (requires HTTPS)
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day expiration
+      });
+
+      // Redirect based on user role (admins to the admin panel, others to the main page)
+      if (sessions[token].admin) {
+        res.json({ message: "Login successful", redirect: "/admin.html" });
+      } else {
+        res.json({ message: "Login successful", redirect: "/website.html" });
+      }
+    } catch (bcryptErr) {
+      console.error("Error comparing passwords:", bcryptErr);
+      return res.status(500).json({ error: "Internal server error" });
+    }
   });
 });
 

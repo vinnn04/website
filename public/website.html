@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dummy Shop - Home</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Hide links by default to prevent flashing */
+    #logout-link,
+    #change-password-link {
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -14,9 +21,12 @@
         <ul>
           <li><a href="website.html">Home</a></li>
           <li><a href="#">Categories</a></li>
-          <li><a href="#">Registries</a></li>
+          <li id="login-link"><a href="/login.html">Login</a></li>
+          <li id="logout-link"><a href="#" id="logout-button">Logout</a></li>
+          <li id="change-password-link"><a href="/change-password.html">Change Password</a></li>
         </ul>
       </nav>
+      <div id="user-info">Logged in as: guest</div>
     </div>
   </header>
 
@@ -50,18 +60,5 @@
   </footer>
 
   <script src="script.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const btn = document.getElementById("checkout-button");
-      if (btn) {
-        btn.addEventListener("click", () => {
-          checkout();
-        });
-      }
-    });
-  </script>
-  <script>
-    console.log("CSRF Token:", document.cookie);
-  </script>
 </body>
 </html>
