@@ -24,7 +24,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Serve static files from your html directory (one level up from backend)
-app.use(express.static(path.join(__dirname, "../html")));
+app.use(express.static(path.join(__dirname, "public")));
 // Serve uploads from the backend/uploads folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -483,86 +483,20 @@ app.delete(
   }
 );
 
-// ==================================================================
-// Serve the Homepage (for testing purposes)
-// ==================================================================
-app.get("/", (req, res) => {
-  db.query("SELECT * FROM products", (err, products) => {
-    if (err) {
-      res.status(500).send("Error retrieving data from the database.");
-      return;
-    }
-    let html = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Product List</title>
-        <style>
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            font-size: 18px;
-            text-align: left;
-          }
-          table th, table td {
-            padding: 12px;
-            border: 1px solid #ddd;
-          }
-          table th {
-            background-color: #f2f2f2;
-          }
-          img {
-            max-width: 100px;
-            height: auto;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>Products Table</h1>
-        <table>
-          <thead>
-            <tr>
-              <th>Product ID</th>
-              <th>Category ID</th>
-              <th>Name</th>
-              <th>Price</th>
-              <th>Description</th>
-              <th>Image</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
-    products.forEach((product) => {
-      html += `
-        <tr>
-          <td>${product.pid}</td>
-          <td>${product.catid}</td>
-          <td>${escapeHTML(product.name)}</td>
-          <td>${product.price}</td>
-          <td>${escapeHTML(product.description)}</td>
-          <td><img src="/${escapeHTML(product.thumbnail_path)}" alt="${escapeHTML(product.name)}"></td>
-        </tr>
-      `;
-    });
-    html += `
-          </tbody>
-        </table>
-      </body>
-      </html>
-    `;
-    res.send(html);
-  });
-});
-
 // Global fallback error handler
 app.use((err, req, res, next) => {
   console.error("Internal Server Error:", err.stack);
   res.status(500).json({
     error: "Something went wrong. Please try again later."
   });
+});
+
+app.get("/", (req, res) => {
+  res.redirect("/website.html");
+});
+
+app.get("/csrf-token", (req, res) => {
+  res.json({ csrfToken: req.csrfToken });
 });
 
 const PORT = 3000;
