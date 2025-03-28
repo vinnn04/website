@@ -1,3 +1,8 @@
+"use strict";
+
+// Set API base URL to your EC2 instance running Node on port 3000
+const API_BASE_URL = "http://52.65.170.10:3000";
+
 function escapeHTML(str) {
   return String(str).replace(/[&<>"']/g, (char) => ({
     '&': '&amp;',
@@ -117,7 +122,7 @@ class Cart {
   
       Promise.allSettled(
         minimalList.map(item =>
-          fetch(`/products?pid=${item.id}`)
+          fetch(API_BASE_URL + `/products?pid=${item.id}`)
             .then(response => {
               if (!response.ok) throw new Error("Failed to fetch product details");
               return response.json();
@@ -140,9 +145,9 @@ class Cart {
           .map(result => result.value);
         this.updateDisplay();
       });
-      } else {
-        this.items = [];
-        this.updateDisplay();
+    } else {
+      this.items = [];
+      this.updateDisplay();
     }
   }
 
@@ -229,9 +234,8 @@ class Cart {
 const shoppingCart = new Cart();
 window.shoppingCart = shoppingCart;
 
-
 function fetchCategories() {
-  fetch('/categories')
+  fetch(API_BASE_URL + '/categories')
     .then(response => {
       if (!response.ok) throw new Error("Failed to retrieve categories");
       return response.json();
@@ -243,7 +247,7 @@ function fetchCategories() {
         data.forEach(category => {
           const li = document.createElement("li");
           const link = document.createElement("a");
-          link.href = `website.html?catid=${category.catid}`;
+          link.href = `/website.html?catid=${category.catid}`;
           link.textContent = escapeHTML(category.name);
           li.appendChild(link);
           categoryList.appendChild(li);
@@ -256,7 +260,7 @@ function fetchCategories() {
 function fetchProducts() {
   const urlParams = new URLSearchParams(window.location.search);
   const catid = urlParams.get("catid");
-  let url = "/products";
+  let url = API_BASE_URL + "/products";
   if (catid) {
     url += `?catid=${encodeURIComponent(catid)}`;
   }
@@ -284,7 +288,7 @@ function fetchProducts() {
             item.className = "product-item";
   
             const productLink = document.createElement("a");
-            productLink.href = `product.html?pid=${product.pid}`;
+            productLink.href = `/product.html?pid=${product.pid}`;
             productLink.innerHTML = `
               <img src="${imagePath}" alt="${productName}" />
               <h3>${productName}</h3>
@@ -339,7 +343,7 @@ function addProductToCart(id, name, price, quantityInputId) {
 }
 
 function fetchProductDetails(pid) {
-  fetch(`/products?pid=${pid}`)
+  fetch(API_BASE_URL + `/products?pid=${pid}`)
     .then(response => {
       if (!response.ok) throw new Error("Failed to retrieve product details");
       return response.json();
@@ -412,7 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const csrfToken = getCsrfToken();
     
       try {
-        const response = await fetch("/login", {
+        const response = await fetch(API_BASE_URL + "/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -443,7 +447,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const messageDiv = document.getElementById("message");
     
       try {
-        const response = await fetch("/change-password", {
+        const response = await fetch(API_BASE_URL + "/change-password", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -476,7 +480,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const logoutLink = document.getElementById("logout-link");
   const changePasswordLink = document.getElementById("change-password-link");
   
-  fetch("/profile", { credentials: "include" })
+  fetch(API_BASE_URL + "/profile", { credentials: "include" })
     .then(res => {
       if (!res.ok) throw new Error("Not logged in");
       return res.json();
@@ -507,7 +511,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (categoriesTableBody && productsTableBody) {
     async function loadCategories() {
       try {
-        const res = await fetch("/categories");
+        const res = await fetch(API_BASE_URL + "/categories");
         const categories = await res.json();
     
         const categoryBody = document.getElementById("categoriesTableBody");
@@ -516,7 +520,7 @@ document.addEventListener("DOMContentLoaded", () => {
         categorySelect.innerHTML = '<option value="" disabled selected>Select a category</option>';
     
         categories.forEach(cat => {
-          // Escape any single quotes in the category name for safety in prompts.
+          // Escape any single quotes in the category name for safety.
           const safeName = cat.name.replace(/'/g, "\\'");
           const row = document.createElement("tr");
           row.innerHTML = `
@@ -542,7 +546,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     async function loadProducts() {
       try {
-        const res = await fetch("/products");
+        const res = await fetch(API_BASE_URL + "/products");
         const products = await res.json();
     
         const productBody = document.getElementById("productsTableBody");
@@ -575,7 +579,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!name) return alert("Please enter a category name.");
     
       try {
-        const res = await fetch("/categories", {
+        const res = await fetch(API_BASE_URL + "/categories", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -602,7 +606,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!newName) return;
     
       try {
-        const res = await fetch(`/categories/${catid}`, {
+        const res = await fetch(API_BASE_URL + `/categories/${catid}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -627,7 +631,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!confirm("Delete this category?")) return;
     
       try {
-        const res = await fetch(`/categories/${catid}`, {
+        const res = await fetch(API_BASE_URL + `/categories/${catid}`, {
           method: "DELETE",
           headers: {
             "X-CSRF-Token": getCsrfToken()
@@ -657,7 +661,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     
       try {
-        const res = await fetch(`/products/${pid}`, {
+        const res = await fetch(API_BASE_URL + `/products/${pid}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -681,7 +685,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!confirm("Delete this product?")) return;
     
       try {
-        const res = await fetch(`/products/${pid}`, {
+        const res = await fetch(API_BASE_URL + `/products/${pid}`, {
           method: "DELETE",
           headers: { "X-CSRF-Token": getCsrfToken() }
         });
@@ -741,7 +745,7 @@ document.addEventListener("DOMContentLoaded", () => {
     logoutButton.addEventListener("click", async (e) => {
       e.preventDefault();
       try {
-        const res = await fetch("/logout", {
+        const res = await fetch(API_BASE_URL + "/logout", {
           method: "GET",
           credentials: "include"
         });

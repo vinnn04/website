@@ -23,8 +23,10 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use(express.static("public"));
-app.use("/uploads", express.static("uploads"));
+// Serve static files from your html directory (one level up from backend)
+app.use(express.static(path.join(__dirname, "../html")));
+// Serve uploads from the backend/uploads folder
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // CSRF token middleware
 app.use((req, res, next) => {
@@ -96,7 +98,7 @@ const db = mysql.createConnection({
   host: "localhost",
   user: "root",
   password: "y9451216A123!@#", // Replace with your actual password
-  database: "mydb"           // Replace with your actual database name
+  database: "mydb"           // Replace with your actual database name (create it if not existing)
 });
 
 db.connect((err) => {
@@ -140,7 +142,6 @@ function escapeHTML(str) {
 // ==================================================================
 
 // POST /login - process login credentials
-// Updated login endpoint with CSRF protection
 app.post("/login", verifyCsrfToken, (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -168,7 +169,7 @@ app.post("/login", verifyCsrfToken, (req, res) => {
         admin: user.admin === 1 || user.admin === true
       };
 
-      // Set authToken cookie with HttpOnly and Secure flags, plus expiration time.
+      // Set authToken cookie with HttpOnly and Secure flags.
       res.cookie("authToken", token, {
         httpOnly: true,
         secure: true, // Set to true in production when using HTTPS
@@ -215,7 +216,6 @@ app.get("/profile", (req, res) => {
 });
 
 // POST /change-password - update password (requires current password verification)
-// After a successful change, the user is logged out.
 app.post("/change-password", requireAuth, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) {
@@ -351,7 +351,7 @@ app.delete(
 // PRODUCTS ENDPOINTS
 // ==================================================================
 
-// GET /products - public access; supports a query parameter "pid" or "catid"
+// GET /products - public access; supports query parameters "pid" or "catid"
 app.get("/products", (req, res) => {
   if (req.query.pid) {
     const pid = parseInt(req.query.pid);
