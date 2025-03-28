@@ -249,12 +249,12 @@ function fetchCategories() {
       if (categoryList) {
         categoryList.innerHTML = "";
         data.forEach(category => {
-          const btn = document.createElement("button");
-          btn.textContent = escapeHTML(category.name);
-          btn.addEventListener("click", () => {
-            window.location.href = `http://localhost:3000/category${category.catid}.html`;
-          });
-          categoryList.appendChild(btn);
+          const li = document.createElement("li");
+          const link = document.createElement("a");
+          link.href = `website.html?catid=${category.catid}`;
+          link.textContent = escapeHTML(category.name);
+          li.appendChild(link);
+          categoryList.appendChild(li);
         });
       }
     })
@@ -409,6 +409,8 @@ function fetchProductDetails(pid) {
 document.addEventListener("DOMContentLoaded", () => {
   // Restore shopping cart from localStorage
   shoppingCart.load();
+
+  fetchCategories();
   
   // --- LOGIN PAGE ---
   const loginForm = document.getElementById("loginForm");

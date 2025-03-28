@@ -20,7 +20,6 @@
       <nav>
         <ul>
           <li><a href="website.html">Home</a></li>
-          <li><a href="#">Categories</a></li>
           <li id="login-link"><a href="/login.html">Login</a></li>
           <li id="logout-link"><a href="#" id="logout-button">Logout</a></li>
           <li id="change-password-link"><a href="/change-password.html">Change Password</a></li>
@@ -46,13 +45,14 @@
     <a href="#">Home</a>
   </nav>
 
-  <aside class="sidebar">
-    <h3>Categories</h3>
-    <ul id="category-list"></ul>
-  </aside>
+  <div class="container content-wrapper">
+    <aside class="sidebar">
+      <h3>Categories</h3>
+      <ul id="category-list"></ul>
+    </aside>
 
-  <div class="container">
-    <div id="dynamic-content"></div>
+    <main class="main-content" id="dynamic-content">
+    </main>
   </div>
 
   <footer>

@@ -1,560 +1,585 @@
-*{
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-body{
-    margin: 0;
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
 }
 
 /* Header Styling */
-header{
-    text-align: center;
-    padding: 1rem 0;
+header {
+  text-align: center;
+  padding: 1rem 0;
 }
 
-header .container{
-    justify-content: space-between;
-    max-width: 800px;
-    margin: 0 auto;
+header .container {
+  justify-content: space-between;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-header h1{
-    margin: 0;
-    font-size: 2rem;
+header h1 {
+  margin: 0;
+  font-size: 2rem;
 }
 
-header nav ul{
-    display: flex;
-    justify-content: center;
-    list-style: none;
-    padding: 1rem 0;
-    background: #9b9a9a;
+header nav ul {
+  display: flex;
+  justify-content: center;
+  list-style: none;
+  padding: 1rem 0;
+  background: #9b9a9a;
 }
 
-header nav ul li{
-    margin: 0 1rem;
-    position: relative;
+header nav ul li {
+  margin: 0 1rem;
+  position: relative;
 }
 
-header nav ul li a{
-    text-decoration: none;
-    color: #000000;
-    font-size: 1rem;
-    font-weight: bold;
+header nav ul li a {
+  text-decoration: none;
+  color: #000000;
+  font-size: 1rem;
+  font-weight: bold;
 }
 
-nav ul li a:hover{
-    color: #007bff;
-    text-decoration: underline;
+nav ul li a:hover {
+  color: #007bff;
+  text-decoration: underline;
 }
 
-h2{
-    text-align: center;
-    margin-bottom: 2rem;
-    font-size: 1.8rem;
-
+h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
 }
 
 /* Product List */
-.product-list{
-    flex: 1;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0;
+.product-list {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0;
 }
 
-.product-item{
-    flex: 1 1 calc(33.333% - 1rem);
-    max-width: calc(33.333% - 1rem);
-    background: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    padding: 1rem;
-    text-align: center;
-    transition: transform 0.3s, box-shadow 0.3s;
+.product-item {
+  flex: 1 1 calc(33.333% - 1rem);
+  max-width: calc(33.333% - 1rem);
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  text-align: center;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.product-item:hover{
-    transform: scale(1.05);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+.product-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-.product-item img{
-    width: 100%;
-    height: auto;
-    border-radius: 5px;
-    cursor: pointer;
+.product-item img {
+  width: 100%;
+  height: auto;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-.product-item h3{
-    margin: 0.5rem 0;
-    cursor: pointer;
-    font-size: 1.2em;
+.product-item h3 {
+  margin: 0.5rem 0;
+  cursor: pointer;
+  font-size: 1.2em;
 }
 
-.product-item p.price{
-    font-size: 1.1rem;
-    color: #e8491d;
-    font-weight: bold;
+.product-item p.price {
+  font-size: 1.1rem;
+  color: #e8491d;
+  font-weight: bold;
 }
 
-.product-item button{
-    background-color: #e8491d;
-    color: #ffffff;
-    border: none;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.3s;
+.product-item button {
+  background-color: #e8491d;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
 }
 
-.product-item button:hover{
-    background-color: #cf3e13;
+.product-item button:hover {
+  background-color: #cf3e13;
 }
 
-.shop{
-    margin-top: 1rem;
+.shop {
+  margin-top: 1rem;
 }
 
-.shop label{
-    display: inline-block;
-    margin-right: 0.5rem;
+.shop label {
+  display: inline-block;
+  margin-right: 0.5rem;
 }
 
 .shop input {
-    width: 50px;
-    padding: 0.3rem;
-    text-align: center;
+  width: 50px;
+  padding: 0.3rem;
+  text-align: center;
 }
 
 /* Product Page Styling */
-.product-details{
-    display: flex;
-    flex-wrap: wrap;
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 5px;
+.product-details {
+  display: flex;
+  flex-wrap: wrap;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 5px;
 }
 
-.product-details img{
-    width: 45%;
-    border-radius: 5px;
+.product-details img {
+  width: 45%;
+  border-radius: 5px;
 }
 
-.product-info{
-    text-align: center;
-    width: 50%;
-    margin-left: 5%;
+.product-info {
+  text-align: center;
+  width: 50%;
+  margin-left: 5%;
 }
 
-.product-info h2{
-    margin-bottom: 15px;
+.product-info h2 {
+  margin-bottom: 15px;
 }
 
-.product-info p.description{
-    margin-bottom: 15px;
+.product-info p.description {
+  margin-bottom: 15px;
 }
 
-.product-info p.price{
-    color: #e8491d;
-    font-size: 1.5em;
-    margin-bottom: 20px;
+.product-info p.price {
+  color: #e8491d;
+  font-size: 1.5em;
+  margin-bottom: 20px;
 }
 
-.product-info button{
-    background-color: #e8491d;
-    color: #ffffff;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
+.product-info button {
+  background-color: #e8491d;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
 }
 
-.product-info button:hover{
-    background-color: #cf3e13;
+.product-info button:hover {
+  background-color: #cf3e13;
 }
 
 /* Hierarchical Navigation Menu */
-.breadcrumb{
-    font-size: 0.9rem;
-    margin: 1rem 0;
-    padding: 0.5rem 1rem;
+.breadcrumb {
+  font-size: 0.9rem;
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
 }
 
-.breadcrumb a{
-    text-decoration: underline;
-    color: #007bff;
-    font-weight: bold;
-    margin-right: 0.5rem;
+.breadcrumb a {
+  text-decoration: underline;
+  color: #007bff;
+  font-weight: bold;
+  margin-right: 0.5rem;
 }
 
-.breadcrumb a:hover{
-    text-decoration: underline;
+.breadcrumb a:hover {
+  text-decoration: underline;
 }
 
-.breadcrumb span{
-    color: #555;
+.breadcrumb span {
+  color: #555;
 }
 
 /* Footer Styling */
-footer{
-    background-color: #35424a;
-    color: #ffffff;
-    text-align: center;
-    padding: 20px 0;
-    margin-top: 40px;
+footer {
+  background-color: #35424a;
+  color: #ffffff;
+  text-align: center;
+  padding: 20px 0;
+  margin-top: 40px;
 }
 
 /* Responsive Design */
-@media (max-width: 1024px){
-    .product-item{
-        flex: 1 1 calc(50% - 1rem);
-        max-width: calc(50% - 1rem);
-    }
+@media (max-width: 1024px) {
+  .product-item {
+    flex: 1 1 calc(50% - 1rem);
+    max-width: calc(50% - 1rem);
+  }
 }
 
-@media (max-width: 768px){
-    .product-item{
-        flex: 1 1 100%;
-        max-width: 100%;
-    }
+@media (max-width: 768px) {
+  .product-item {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
 
-    nav ul{
-        flex-direction: column;
-        align-items: center;
-    }
+  nav ul {
+    flex-direction: column;
+    align-items: center;
+  }
 
-    nav ul li{
-        margin: 0.5rem 0;
-    }
+  nav ul li {
+    margin: 0.5rem 0;
+  }
+
+  .content-wrapper {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
 }
 
 /* Categories List */
 #category-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
 }
 
 #category-list li {
-    margin-bottom: 10px;
+  list-style: none;
+  margin: 0;
 }
 
 #category-list li a {
-    display: block;
-    padding: 8px 12px;
-    text-decoration: none;
-    background-color: #007bff;
-    color: white;
-    border-radius: 4px;
-    transition: background-color 0.3s ease;
+  display: inline-block;
+  padding: 4px 8px;
+  text-decoration: none;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 #category-list li a:hover {
-    background-color: #0056b3;
+  background-color: #0056b3;
 }
 
 .sidebar {
-    width: 250px;              
-    padding: 15px;
-    background-color: #f2f2f2;   
-    box-sizing: border-box;
-  }
-
-  .sidebar h3 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 1.5em;
-    text-align: center;
-  }
-
-.sidebar ul{
-    list-style: none;
-    padding: 0;
+  width: 250px;
+  padding: 15px;
+  background-color: #f2f2f2;
+  box-sizing: border-box;
 }
 
-.sidebar ul li{
-    margin-bottom: 0.5rem;
+.sidebar h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+  text-align: center;
 }
 
-.sidebar ul li a{
-    text-decoration: none;
-    color: #007bff;
-    font-size: 1rem;
-    transition: color 0.3s ease;
+.sidebar ul {
+  list-style: none;
+  padding: 0;
 }
 
-.sidebar ul li a:hover{
-    color: #0056b3;
-    text-decoration: underline;
+.sidebar ul li {
+  margin-bottom: 0.4rem;
+}
+
+.sidebar ul li a {
+  text-decoration: none;
+  color: #007bff;
+  font-size: 1rem;
+  transition: color 0.3s ease;
+}
+
+.sidebar ul li a:hover {
+  color: #0056b3;
+  text-decoration: underline;
 }
 
 /* Shopping List */
 .shopping-list-container {
-    position: fixed;
-    top: 100px;
-    right: 20px;
-    width: 300px;
-    background: #f8f9fa;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    z-index: 1000;
-    transition: max-height 0.3s ease-in-out;
-    max-height: 40px;
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  width: 300px;
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 1000;
+  transition: max-height 0.3s ease-in-out;
+  max-height: 40px;
 }
 
 .shopping-list-container:hover {
-    max-height: 300px;
+  max-height: 300px;
 }
 
 .shopping-list-header {
-    background: #2784e7;
-    color: white;
-    padding: 1rem;
-    text-align: center;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
+  background: #2784e7;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .shopping-list-content {
-    padding: 1rem;
-    max-height: 250px;
-    overflow-y: auto;
+  padding: 1rem;
+  max-height: 250px;
+  overflow-y: auto;
 }
 
 .shopping-list-content h2 {
-    font-size: 1.2rem;
-    margin-bottom: 1rem;
-    text-align: center;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  text-align: center;
 }
 
 .shopping-list-content ul {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 1rem 0;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
 }
 
 .shopping-list-content ul li {
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-    word-wrap: break-word;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  word-wrap: break-word;
 }
 
 .shopping-list-footer {
-    text-align: center;
+  text-align: center;
 }
 
 .shopping-list-footer button {
-    background: #398be2;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    border-radius: 5px;
+  background: #398be2;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 5px;
 }
 
 .shopping-list-footer button:hover {
-    background: #509cee;
+  background: #509cee;
 }
-  
-  /* ---------------------------------------
-     CHANGE PASSWORD PAGE STYLES
-  ------------------------------------------ */
-  .change-password-container {
-    max-width: 600px;
-    margin: 50px auto;
-    padding: 20px;
-  }
-  
-  .change-password-container h1 {
-    text-align: center;
-  }
-  
-  .change-password-container form {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .change-password-container label {
-    margin-top: 10px;
-    font-weight: bold;
-  }
-  
-  .change-password-container input {
-    padding: 5px;
-    margin-top: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
-  .change-password-container button {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #4285f4;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .change-password-container button:hover {
-    opacity: 0.9;
-  }
-  
-  .change-password-container .message {
-    text-align: center;
-    margin-top: 10px;
-  }
-  
-  .change-password-container .error {
-    color: red;
-  }
-  
-  .change-password-container .success {
-    color: green;
-  }
-  
-  /* ---------------------------------------
-     ADMIN PANEL STYLES
-  ------------------------------------------ */
-  .admin-container {
-    padding: 20px;
-    max-width: 1200px;
-    margin: auto;
-  }
-  
-  .admin-container h1,
-  .admin-container h2 {
-    margin-top: 40px;
-  }
-  
-  .admin-container .form-group {
-    margin-bottom: 10px;
-  }
-  
-  .admin-container input,
-  .admin-container select,
-  .admin-container textarea {
-    padding: 5px;
-    width: 300px;
-    max-width: 100%;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
-  .admin-container textarea {
-    height: 100px;
-  }
-  
-  .admin-container button {
-    padding: 5px 10px;
-    margin-top: 10px;
-    background-color: #4285f4;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .admin-container button:hover {
-    opacity: 0.9;
-  }
-  
-  .admin-container table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-  
-  .admin-container th,
-  .admin-container td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-  }
-  
-  .admin-container th {
-    background-color: #f2f2f2;
-  }
-  
-  .admin-container .section {
-    margin-bottom: 60px;
-  }
 
 /* ---------------------------------------
-   Simple LOGIN PAGE STYLES (from inline)
+   CHANGE PASSWORD PAGE STYLES
+------------------------------------------ */
+.change-password-container {
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 20px;
+}
+
+.change-password-container h1 {
+  text-align: center;
+}
+
+.change-password-container form {
+  display: flex;
+  flex-direction: column;
+}
+
+.change-password-container label {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.change-password-container input {
+  padding: 5px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.change-password-container button {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.change-password-container button:hover {
+  opacity: 0.9;
+}
+
+.change-password-container .message {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.change-password-container .error {
+  color: red;
+}
+
+.change-password-container .success {
+  color: green;
+}
+
+/* ---------------------------------------
+   ADMIN PANEL STYLES
+------------------------------------------ */
+.admin-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.admin-container h1,
+.admin-container h2 {
+  margin-top: 40px;
+}
+
+.admin-container .form-group {
+  margin-bottom: 10px;
+}
+
+.admin-container input,
+.admin-container select,
+.admin-container textarea {
+  padding: 5px;
+  width: 300px;
+  max-width: 100%;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.admin-container textarea {
+  height: 100px;
+}
+
+.admin-container button {
+  padding: 5px 10px;
+  margin-top: 10px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.admin-container button:hover {
+  opacity: 0.9;
+}
+
+.admin-container table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.admin-container th,
+.admin-container td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.admin-container th {
+  background-color: #f2f2f2;
+}
+
+.admin-container .section {
+  margin-bottom: 60px;
+}
+
+/* ---------------------------------------
+   LOGIN PAGE STYLES
 ------------------------------------------ */
 .login-page {
-    font-family: Arial, sans-serif;
-    margin: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 90vh;
-    background-color: #f7f7f7;
-  }
-  
-  .login-container {
-    background: #fff;
-    padding: 20px 30px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    max-width: 400px;
-    width: 100%;
-  }
-  
-  .login-container h1 {
-    text-align: center;
-  }
-  
-  .login-container form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .login-container label {
-    font-weight: bold;
-  }
-  
-  .login-container input[type="email"],
-  .login-container input[type="password"] {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 100%;
-  }
-  
-  .login-container button {
-    padding: 10px;
-    background-color: #4285f4;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .login-container button:hover {
-    opacity: 0.9;
-  }
-  
-  .login-container .error {
-    color: red;
-    font-weight: bold;
-    text-align: center;
-  }
+  font-family: Arial, sans-serif;
+  margin: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 90vh;
+  background-color: #f7f7f7;
+}
+
+.login-container {
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+}
+
+.login-container h1 {
+  text-align: center;
+}
+
+.login-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.login-container label {
+  font-weight: bold;
+}
+
+.login-container input[type="email"],
+.login-container input[type="password"] {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.login-container button {
+  padding: 10px;
+  background-color: #4285f4;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.login-container button:hover {
+  opacity: 0.9;
+}
+
+.login-container .error {
+  color: red;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Layout wrapper: sidebar + main content side-by-side */
+.content-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+/* Main content area next to sidebar */
+.main-content {
+  flex: 1;
+  min-width: 0;
+}
