@@ -140,7 +140,8 @@ function escapeHTML(str) {
 // ==================================================================
 
 // POST /login - process login credentials
-app.post("/login", (req, res) => {
+// Updated login endpoint with CSRF protection
+app.post("/login", verifyCsrfToken, (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required." });
@@ -159,7 +160,7 @@ app.post("/login", (req, res) => {
       if (!match) {
         return res.status(401).json({ error: "Invalid email or password." });
       }
-      // Successful login: regenerate session token to prevent session fixation
+      // Successful login: rotate session token to prevent session fixation
       const token = crypto.randomBytes(32).toString("hex");
       sessions[token] = {
         userid: user.userid,
@@ -167,14 +168,14 @@ app.post("/login", (req, res) => {
         admin: user.admin === 1 || user.admin === true
       };
 
-      // Set authToken cookie with httpOnly and secure flags, plus an expiration time.
+      // Set authToken cookie with HttpOnly and Secure flags, plus expiration time.
       res.cookie("authToken", token, {
         httpOnly: true,
-        secure: true, // set true in production with HTTPS
+        secure: true, // Set to true in production when using HTTPS
         expires: new Date(Date.now() + SESSION_DURATION)
       });
 
-      // Redirect based on role: admin gets admin panel; otherwise main page.
+      // Redirect based on role.
       if (sessions[token].admin) {
         res.json({ message: "Login successful", redirect: "/admin.html" });
       } else {
@@ -553,55 +554,6 @@ app.get("/", (req, res) => {
       </html>
     `;
     res.send(html);
-  });
-});
-
-app.post("/login", (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required." });
-  }
-  db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
-    if (err) {
-      console.error("Database error in login:", err);
-      return res.status(500).json({ error: "Internal server error" });
-    }
-    if (results.length === 0) {
-      // No user found with this email
-      return res.status(401).json({ error: "Invalid email or password." });
-    }
-    const user = results[0];
-    try {
-      const match = await bcrypt.compare(password, user.password);
-      if (!match) {
-        // Password is incorrect
-        return res.status(401).json({ error: "Invalid email or password." });
-      }
-      // Successful login: rotate the session token to prevent session fixation attacks
-      const token = crypto.randomBytes(32).toString("hex");
-      sessions[token] = {
-        userid: user.userid,
-        email: user.email,
-        admin: user.admin === 1 || user.admin === true
-      };
-
-      // Set the auth cookie with HttpOnly and Secure flags with an expiration time (e.g., less than 3 days)
-      res.cookie("authToken", token, {
-        httpOnly: true,
-        secure: true, // Change to true in production (requires HTTPS)
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day expiration
-      });
-
-      // Redirect based on user role (admins to the admin panel, others to the main page)
-      if (sessions[token].admin) {
-        res.json({ message: "Login successful", redirect: "/admin.html" });
-      } else {
-        res.json({ message: "Login successful", redirect: "/website.html" });
-      }
-    } catch (bcryptErr) {
-      console.error("Error comparing passwords:", bcryptErr);
-      return res.status(500).json({ error: "Internal server error" });
-    }
   });
 });
 

@@ -1,13 +1,34 @@
+/**************************************************
+ * Utility Functions
+ **************************************************/
 function escapeHTML(str) {
   return String(str).replace(/[&<>"']/g, (char) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#39;',
+    "'": '&#39;'
   }[char]));
 }
 
+function getCsrfToken() {
+  return document.cookie
+    .split("; ")
+    .find(row => row.startsWith("csrfToken="))
+    ?.split("=")[1] || "";
+}
+
+function updateQueryStringParameter(uri, key, value) {
+  const re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+  const separator = uri.indexOf('?') !== -1 ? "&" : "?";
+  return uri.match(re)
+    ? uri.replace(re, '$1' + key + "=" + value + '$2')
+    : uri + separator + key + "=" + value;
+}
+
+/**************************************************
+ * Shopping Cart Classes and Related Functions
+ **************************************************/
 class CartItem {
   constructor(id, name, price, quantity) {
     this.id = id;
@@ -116,9 +137,11 @@ class Cart {
     const shoppingListItems = document.getElementById("shopping-list-items");
     const shoppingListTotal = document.getElementById("shopping-list-total");
     const shoppingListHeader = document.querySelector(".shopping-list-header");
-    shoppingListItems.innerHTML = "";
-    let total = 0;
 
+    if (shoppingListItems) {
+      shoppingListItems.innerHTML = "";
+    }
+    let total = 0;
     this.items.forEach(item => {
       total += item.price * item.quantity;
       const listItem = document.createElement("li");
@@ -133,11 +156,15 @@ class Cart {
         </div>
         <div class="item-total">Total: $<span>${(item.price * item.quantity).toFixed(2)}</span></div>
       `;
-      shoppingListItems.appendChild(listItem);
+      if (shoppingListItems) shoppingListItems.appendChild(listItem);
     });
 
-    shoppingListTotal.textContent = total.toFixed(2);
-    shoppingListHeader.textContent = `Shopping List - $${total.toFixed(2)}`;
+    if (shoppingListTotal) {
+      shoppingListTotal.textContent = total.toFixed(2);
+    }
+    if (shoppingListHeader) {
+      shoppingListHeader.textContent = `Shopping List - $${total.toFixed(2)}`;
+    }
   }
 
   checkout() {
@@ -170,6 +197,9 @@ function addProductToCart(id, name, price, quantityInputId) {
   shoppingCart.addItem(id, name, price, quantity);
 }
 
+/**************************************************
+ * Product and Category Fetching Functions
+ **************************************************/
 function fetchCategories() {
   fetch('/categories')
     .then(response => {
@@ -178,15 +208,17 @@ function fetchCategories() {
     })
     .then(data => {
       const categoryList = document.getElementById("category-list");
-      categoryList.innerHTML = "";
-      data.forEach(category => {
-        const btn = document.createElement("button");
-        btn.textContent = escapeHTML(category.name);
-        btn.addEventListener("click", () => {
-          window.location.href = `http://localhost:3000/category${category.catid}.html`;
+      if (categoryList) {
+        categoryList.innerHTML = "";
+        data.forEach(category => {
+          const btn = document.createElement("button");
+          btn.textContent = escapeHTML(category.name);
+          btn.addEventListener("click", () => {
+            window.location.href = `http://localhost:3000/category${category.catid}.html`;
+          });
+          categoryList.appendChild(btn);
         });
-        categoryList.appendChild(btn);
-      });
+      }
     })
     .catch(error => console.error("Error fetching categories:", error));
 }
@@ -198,70 +230,69 @@ function fetchProducts() {
   if (catid) {
     url += `?catid=${encodeURIComponent(catid)}`;
   }
-
   fetch(url)
-    .then((response) => {
+    .then(response => {
       if (!response.ok) throw new Error("Failed to retrieve products");
       return response.json();
     })
-    .then((data) => {
+    .then(data => {
       const dynamicContent = document.getElementById("dynamic-content");
-      dynamicContent.innerHTML = `<h2>Our Products</h2>`;
-      const productList = document.createElement("div");
-      productList.className = "product-list";
-
-      if (data.length === 0) {
-        productList.textContent = "No products found.";
-      } else {
-        data.forEach((product) => {
-          const imagePath = escapeHTML(product.thumbnail_path || product.image_path || `images/product${product.pid}.jpg`);
-          const productName = escapeHTML(product.name);
-          const description = escapeHTML(product.description);
-        
-          const item = document.createElement("div");
-          item.className = "product-item";
-        
-          const productLink = document.createElement("a");
-          productLink.href = `product.html?pid=${product.pid}`;
-          productLink.innerHTML = `
-            <img src="${imagePath}" alt="${productName}" />
-            <h3>${productName}</h3>
-            <p class="price">$${product.price}</p>
-          `;
-        
-          item.appendChild(productLink);
-        
-          const shopDiv = document.createElement("div");
-          shopDiv.className = "shop";
-          shopDiv.innerHTML = `
-            <label for="quantity${product.pid}">Quantity:</label>
-            <input type="number" id="quantity${product.pid}" min="1" value="1" />
-            <button class="add-to-cart"
-              data-id="${product.pid}"
-              data-name="${productName}"
-              data-price="${product.price}"
-              data-quantity-id="quantity${product.pid}">
-              Add to Cart
-            </button>
-          `;
-        
-          item.appendChild(shopDiv);
-        
-          shopDiv.querySelector(".add-to-cart").addEventListener("click", function () {
-            const id = parseInt(this.dataset.id, 10);
-            const name = this.dataset.name;
-            const price = parseFloat(this.dataset.price);
-            const quantityInputId = this.dataset.quantityId;
-            addProductToCart(id, name, price, quantityInputId);
+      if (dynamicContent) {
+        dynamicContent.innerHTML = `<h2>Our Products</h2>`;
+        const productList = document.createElement("div");
+        productList.className = "product-list";
+  
+        if (data.length === 0) {
+          productList.textContent = "No products found.";
+        } else {
+          data.forEach((product) => {
+            const imagePath = escapeHTML(product.thumbnail_path || product.image_path || `images/product${product.pid}.jpg`);
+            const productName = escapeHTML(product.name);
+            const description = escapeHTML(product.description);
+  
+            const item = document.createElement("div");
+            item.className = "product-item";
+  
+            const productLink = document.createElement("a");
+            productLink.href = `product.html?pid=${product.pid}`;
+            productLink.innerHTML = `
+              <img src="${imagePath}" alt="${productName}" />
+              <h3>${productName}</h3>
+              <p class="price">$${product.price}</p>
+            `;
+            item.appendChild(productLink);
+  
+            const shopDiv = document.createElement("div");
+            shopDiv.className = "shop";
+            shopDiv.innerHTML = `
+              <label for="quantity${product.pid}">Quantity:</label>
+              <input type="number" id="quantity${product.pid}" min="1" value="1" />
+              <button class="add-to-cart"
+                data-id="${product.pid}"
+                data-name="${productName}"
+                data-price="${product.price}"
+                data-quantity-id="quantity${product.pid}">
+                Add to Cart
+              </button>
+            `;
+            item.appendChild(shopDiv);
+  
+            shopDiv.querySelector(".add-to-cart").addEventListener("click", function () {
+              const id = parseInt(this.dataset.id, 10);
+              const name = this.dataset.name;
+              const price = parseFloat(this.dataset.price);
+              const quantityInputId = this.dataset.quantityId;
+              addProductToCart(id, name, price, quantityInputId);
+            });
+  
+            productList.appendChild(item);
           });
-        
-          productList.appendChild(item);
-        });
+        }
+  
+        dynamicContent.appendChild(productList);
       }
-
-      dynamicContent.appendChild(productList);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error("Error fetching products:", error);
     });
 }
@@ -274,7 +305,6 @@ function fetchProductDetails(pid) {
     })
     .then(product => {
       const dynamicContent = document.getElementById("dynamic-content");
-
       let imagePath;
       if (product.image_path) {
         imagePath = '/' + escapeHTML(product.image_path);
@@ -283,71 +313,128 @@ function fetchProductDetails(pid) {
       }
       const productName = escapeHTML(product.name);
       const description = escapeHTML(product.description);
-
-      dynamicContent.innerHTML = `
-        <h2>${productName}</h2>
-        <div class="product-details">
-          <img src="${imagePath}" alt="${productName}" />
-          <div class="product-info">
-            <p class="description">${description}</p>
-            <p class="price">$${product.price}</p>
-            <div class="shop">
-              <label for="quantity${product.pid}">Quantity:</label>
-              <input type="number" id="quantity${product.pid}" min="1" value="1">
-              <button class="add-to-cart"
-                data-id="${product.pid}"
-                data-name="${productName}"
-                data-price="${product.price}"
-                data-quantity-id="quantity${product.pid}">
-                Add to Cart
-              </button>
+  
+      if (dynamicContent) {
+        dynamicContent.innerHTML = `
+          <h2>${productName}</h2>
+          <div class="product-details">
+            <img src="${imagePath}" alt="${productName}" />
+            <div class="product-info">
+              <p class="description">${description}</p>
+              <p class="price">$${product.price}</p>
+              <div class="shop">
+                <label for="quantity${product.pid}">Quantity:</label>
+                <input type="number" id="quantity${product.pid}" min="1" value="1">
+                <button class="add-to-cart"
+                  data-id="${product.pid}"
+                  data-name="${productName}"
+                  data-price="${product.price}"
+                  data-quantity-id="quantity${product.pid}">
+                  Add to Cart
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      `;
-
-      dynamicContent.querySelector(".add-to-cart").addEventListener("click", function () {
-        const id = parseInt(this.dataset.id, 10);
-        const name = this.dataset.name;
-        const price = parseFloat(this.dataset.price);
-        const quantityInputId = this.dataset.quantityId;
-        addProductToCart(id, name, price, quantityInputId);
-      });
+        `;
+        dynamicContent.querySelector(".add-to-cart").addEventListener("click", function () {
+          const id = parseInt(this.dataset.id, 10);
+          const name = this.dataset.name;
+          const price = parseFloat(this.dataset.price);
+          const quantityInputId = this.dataset.quantityId;
+          addProductToCart(id, name, price, quantityInputId);
+        });
+      }
     })
     .catch(error => {
       console.error("Error fetching product details:", error);
       const dynamicContent = document.getElementById("dynamic-content");
-      dynamicContent.innerHTML = "<p>Product details not available at the moment.</p>";
+      if (dynamicContent) {
+        dynamicContent.innerHTML = "<p>Product details not available at the moment.</p>";
+      }
     });
 }
 
-function getCsrfToken() {
-  return document.cookie
-    .split("; ")
-    .find(row => row.startsWith("csrfToken="))
-    ?.split("=")[1];
-}
-
-function updateQueryStringParameter(uri, key, value) {
-  let re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
-  let separator = uri.indexOf('?') !== -1 ? "&" : "?";
-  if (uri.match(re)) {
-    return uri.replace(re, '$1' + key + "=" + value + '$2');
-  } else {
-    return uri + separator + key + "=" + value;
-  }
-}
-
-// Load cart and fetch initial data
-shoppingCart.load();
-
+/**************************************************
+ * Page-Specific Logic (Login, Change Password, Admin, etc.)
+ **************************************************/
 document.addEventListener("DOMContentLoaded", () => {
+  // --- LOGIN PAGE ---
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+    
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const csrfToken = getCsrfToken();
+    
+      try {
+        const response = await fetch("/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken
+          },
+          body: JSON.stringify({ email, password })
+        });
+    
+        const data = await response.json();
+        if (response.ok) {
+          window.location.href = data.redirect;
+        } else {
+          document.getElementById("error").textContent = data.error;
+        }
+      } catch (err) {
+        document.getElementById("error").textContent = "An error occurred. Please try again.";
+      }
+    });
+  }
+  
+  // --- CHANGE PASSWORD PAGE ---
+  const changePasswordForm = document.getElementById("changePasswordForm");
+  if (changePasswordForm) {
+    changePasswordForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+    
+      const currentPassword = document.getElementById("currentPassword").value;
+      const newPassword = document.getElementById("newPassword").value;
+      const messageDiv = document.getElementById("message");
+    
+      try {
+        const response = await fetch("/change-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": getCsrfToken()
+          },
+          credentials: "include",
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+    
+        const data = await response.json();
+        if (response.ok) {
+          messageDiv.textContent = data.message;
+          messageDiv.className = "message success";
+          setTimeout(() => {
+            window.location.href = "/login.html";
+          }, 2000);
+        } else {
+          messageDiv.textContent = data.error;
+          messageDiv.className = "message error";
+        }
+      } catch (err) {
+        messageDiv.textContent = "An error occurred. Please try again.";
+        messageDiv.className = "message error";
+      }
+    });
+  }
+  
+  // --- USER PROFILE / NAVIGATION UPDATE ---
   const userInfo = document.getElementById("user-info");
   const loginLink = document.getElementById("login-link");
   const logoutLink = document.getElementById("logout-link");
-  const logoutButton = document.getElementById("logout-button");
   const changePasswordLink = document.getElementById("change-password-link");
-
+  
   fetch("/profile", { credentials: "include" })
     .then(res => {
       if (!res.ok) throw new Error("Not logged in");
@@ -373,9 +460,225 @@ document.addEventListener("DOMContentLoaded", () => {
       if (changePasswordLink) changePasswordLink.style.display = "none";
       if (loginLink) loginLink.style.display = "inline-block";
     });
-
-  fetchCategories();
-
+  
+  // --- ADMIN PAGE (Categories / Products Management) ---
+  const categoriesTableBody = document.getElementById("categoriesTableBody");
+  const productsTableBody = document.getElementById("productsTableBody");
+  if (categoriesTableBody && productsTableBody) {
+    async function loadCategories() {
+      try {
+        const res = await fetch("/categories");
+        const categories = await res.json();
+    
+        const categoryBody = document.getElementById("categoriesTableBody");
+        const categorySelect = document.getElementById("catid");
+        categoryBody.innerHTML = "";
+        categorySelect.innerHTML = '<option value="" disabled selected>Select a category</option>';
+    
+        categories.forEach(cat => {
+          // Escape any single quotes in the category name for safety in prompts.
+          const safeName = cat.name.replace(/'/g, "\\'");
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${cat.catid}</td>
+            <td>${cat.name}</td>
+            <td>
+              <button class="edit-category" data-catid="${cat.catid}" data-catname="${safeName}">Edit</button>
+              <button class="delete-category" data-catid="${cat.catid}">Delete</button>
+            </td>
+          `;
+          categoryBody.appendChild(row);
+    
+          const option = document.createElement("option");
+          option.value = cat.catid;
+          option.textContent = cat.name;
+          categorySelect.appendChild(option);
+        });
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+        alert("Failed to load categories.");
+      }
+    }
+    
+    async function loadProducts() {
+      try {
+        const res = await fetch("/products");
+        const products = await res.json();
+    
+        const productBody = document.getElementById("productsTableBody");
+        productBody.innerHTML = "";
+    
+        products.forEach(prod => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${prod.pid}</td>
+            <td>${prod.catid}</td>
+            <td>${prod.name}</td>
+            <td>$${parseFloat(prod.price).toFixed(2)}</td>
+            <td>${prod.description}</td>
+            <td>
+              <button class="edit-product" data-pid="${prod.pid}">Edit</button>
+              <button class="delete-product" data-pid="${prod.pid}">Delete</button>
+            </td>
+          `;
+          productBody.appendChild(row);
+        });
+      } catch (err) {
+        console.error("Failed to load products:", err);
+        alert("Failed to load products.");
+      }
+    }
+    
+    async function handleAddCategory(e) {
+      e.preventDefault();
+      const name = document.getElementById("categoryName").value.trim();
+      if (!name) return alert("Please enter a category name.");
+    
+      try {
+        const res = await fetch("/categories", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": getCsrfToken()
+          },
+          body: JSON.stringify({ name })
+        });
+    
+        const data = await res.json();
+        if (res.ok) {
+          alert("Category added!");
+          document.getElementById("categoryName").value = "";
+          loadCategories();
+        } else {
+          alert("Error: " + (data.error || JSON.stringify(data)));
+        }
+      } catch (err) {
+        console.error("Add category error:", err);
+      }
+    }
+    
+    async function editCategory(catid, currentName) {
+      const newName = prompt("Enter new category name:", currentName);
+      if (!newName) return;
+    
+      try {
+        const res = await fetch(`/categories/${catid}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": getCsrfToken()
+          },
+          body: JSON.stringify({ name: newName.trim() })
+        });
+    
+        const data = await res.json();
+        if (res.ok) {
+          alert("Category updated.");
+          loadCategories();
+        } else {
+          alert("Update failed: " + (data.error || JSON.stringify(data)));
+        }
+      } catch (err) {
+        console.error("Update error:", err);
+      }
+    }
+    
+    async function deleteCategory(catid) {
+      if (!confirm("Delete this category?")) return;
+    
+      try {
+        const res = await fetch(`/categories/${catid}`, {
+          method: "DELETE",
+          headers: {
+            "X-CSRF-Token": getCsrfToken()
+          }
+        });
+    
+        const data = await res.json();
+        if (res.ok) {
+          alert("Category deleted.");
+          loadCategories();
+        } else {
+          alert("Delete failed: " + (data.error || JSON.stringify(data)));
+        }
+      } catch (err) {
+        console.error("Delete error:", err);
+      }
+    }
+    
+    async function editProduct(pid) {
+      const name = prompt("Enter new name:");
+      const price = parseFloat(prompt("Enter new price:"));
+      const description = prompt("Enter new description:");
+      const catid = parseInt(prompt("Enter new category ID:"), 10);
+    
+      if (!name || isNaN(price) || !description || isNaN(catid)) {
+        return alert("Invalid input.");
+      }
+    
+      try {
+        const res = await fetch(`/products/${pid}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": getCsrfToken()
+          },
+          body: JSON.stringify({ name, price, description, catid })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert("Product updated.");
+          loadProducts();
+        } else {
+          alert("Update failed: " + (data.error || JSON.stringify(data)));
+        }
+      } catch (err) {
+        console.error("Update error:", err);
+      }
+    }
+    
+    async function deleteProduct(pid) {
+      if (!confirm("Delete this product?")) return;
+    
+      try {
+        const res = await fetch(`/products/${pid}`, {
+          method: "DELETE",
+          headers: { "X-CSRF-Token": getCsrfToken() }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert("Product deleted.");
+          loadProducts();
+        } else {
+          alert("Delete failed: " + (data.error || JSON.stringify(data)));
+        }
+      } catch (err) {
+        console.error("Delete error:", err);
+      }
+    }
+    
+    // Attach event listener for adding a new category.
+    const categoryForm = document.getElementById("categoryForm");
+    if (categoryForm) {
+      categoryForm.addEventListener("submit", handleAddCategory);
+    }
+    
+    // If a product form exists, append a hidden CSRF token field.
+    const productForm = document.getElementById("productForm");
+    if (productForm) {
+      const csrf = document.createElement("input");
+      csrf.type = "hidden";
+      csrf.name = "csrfToken";
+      csrf.value = getCsrfToken();
+      productForm.appendChild(csrf);
+    }
+    
+    // Load initial data for admin page.
+    loadCategories();
+    loadProducts();
+  }
+  
+  // --- General: Load products or product details on public pages ---
   const urlParams = new URLSearchParams(window.location.search);
   const pid = parseInt(urlParams.get('pid'), 10);
   if (!isNaN(pid)) {
@@ -383,14 +686,17 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     fetchProducts();
   }
-
+  
+  // --- Attach checkout action for shopping list ---
   const btn = document.getElementById("checkout-button");
   if (btn) {
     btn.addEventListener("click", () => {
-      checkout();
+      shoppingCart.checkout();
     });
   }
-
+  
+  // --- Logout Button Logic ---
+  const logoutButton = document.getElementById("logout-button");
   if (logoutButton) {
     logoutButton.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -412,4 +718,26 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+// Add event delegation for administrator category and product buttons
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains("edit-category")) {
+    const catid = e.target.getAttribute("data-catid");
+    const catname = e.target.getAttribute("data-catname");
+    editCategory(catid, catname);
+  }
+  if (e.target.classList.contains("delete-category")) {
+    const catid = e.target.getAttribute("data-catid");
+    deleteCategory(catid);
+  }
+  if (e.target.classList.contains("edit-product")) {
+    const pid = e.target.getAttribute("data-pid");
+    editProduct(pid);
+  }
+  if (e.target.classList.contains("delete-product")) {
+    const pid = e.target.getAttribute("data-pid");
+    deleteProduct(pid);
+  }
+});
+
+// Expose checkout globally for inline usage.
 window.checkout = () => shoppingCart.checkout();

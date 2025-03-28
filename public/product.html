@@ -51,23 +51,5 @@
   </footer>
 
   <script src="script.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const btn = document.getElementById("checkout-button");
-      if (btn) {
-        btn.addEventListener("click", () => {
-          checkout();
-        });
-      }
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const pid = parseInt(urlParams.get("pid"), 10);
-      if (!isNaN(pid)) {
-        fetchProductDetails(pid);
-      } else {
-        document.getElementById("dynamic-content").innerHTML = "<p>Invalid product ID.</p>";
-      }
-    });
-  </script>
 </body>
 </html>
