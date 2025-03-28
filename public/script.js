@@ -1,3 +1,13 @@
+function escapeHTML(str) {
+  return String(str).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
 class CartItem {
   constructor(id, name, price, quantity) {
     this.id = id;
@@ -127,12 +137,12 @@ class Cart {
       const listItem = document.createElement("li");
       listItem.id = `cart-item-${item.id}`;
       listItem.innerHTML = `
-        <span class="item-name">${item.name}</span> - $<span class="unit-price">${item.price.toFixed(2)}</span> each<br>
+        <span class="item-name">${escapeHTML(item.name)}</span> - $<span class="unit-price">${item.price.toFixed(2)}</span> each<br>
         <div class="quantity-controls">
-          <button onclick="shoppingCart.decrementItem(${item.id})">-</button>
-          <input type="number" id="item-qty-${item.id}" value="${item.quantity}" min="1" onchange="shoppingCart.updateItemQuantity(${item.id}, this.value)">
-          <button onclick="shoppingCart.incrementItem(${item.id})">+</button>
-          <button onclick="shoppingCart.removeItem(${item.id})">Delete</button>
+          <button class="decrement">-</button>
+          <input type="number" id="item-qty-${item.id}" value="${item.quantity}" min="1">
+          <button class="increment">+</button>
+          <button class="remove">Delete</button>
         </div>
         <div class="item-total">Total: $<span>${(item.price * item.quantity).toFixed(2)}</span></div>
       `;
@@ -186,10 +196,10 @@ function fetchCategories() {
       categoryList.innerHTML = "";
       data.forEach(category => {
         const btn = document.createElement("button");
-        btn.textContent = category.name;
-        btn.onclick = () => {
+        btn.textContent = escapeHTML(category.name);
+        btn.addEventListener("click", () => {
           window.location.href = `http://localhost:3000/category${category.catid}.html`;
-        };
+        });
         categoryList.appendChild(btn);
       });
     })
@@ -198,49 +208,77 @@ function fetchCategories() {
 
 function fetchProducts() {
   const urlParams = new URLSearchParams(window.location.search);
-  const catid = urlParams.get('catid');
-  let url = '/products';
+  const catid = urlParams.get("catid");
+  let url = "/products";
   if (catid) {
-    url += '?catid=' + catid;
+    url += `?catid=${encodeURIComponent(catid)}`;
   }
+
   fetch(url)
-    .then(response => {
+    .then((response) => {
       if (!response.ok) throw new Error("Failed to retrieve products");
       return response.json();
     })
-    .then(data => {
+    .then((data) => {
       const dynamicContent = document.getElementById("dynamic-content");
       dynamicContent.innerHTML = `<h2>Our Products</h2>`;
       const productList = document.createElement("div");
       productList.className = "product-list";
 
       if (data.length === 0) {
-        productList.textContent = "No products found for this category.";
+        productList.textContent = "No products found.";
       } else {
-        data.forEach(product => {
-          let imagePath = product.thumbnail_path
-                          ? product.thumbnail_path
-                          : (product.image_path || `images/product${product.pid}.jpg`);
+        data.forEach((product) => {
+          const imagePath = escapeHTML(product.thumbnail_path || product.image_path || `images/product${product.pid}.jpg`);
+          const productName = escapeHTML(product.name);
+          const description = escapeHTML(product.description);
+        
           const item = document.createElement("div");
           item.className = "product-item";
-          item.innerHTML = `
-            <img src="${imagePath}" alt="${product.name}" onclick="window.location.href='website.html?pid=${product.pid}'">
-            <h3 onclick="window.location.href='website.html?pid=${product.pid}'">${product.name}</h3>
+        
+          const productLink = document.createElement("a");
+          productLink.href = `product.html?pid=${product.pid}`;
+          productLink.innerHTML = `
+            <img src="${imagePath}" alt="${productName}" />
+            <h3>${productName}</h3>
             <p class="price">$${product.price}</p>
-            <div class="shop">
-              <label for="quantity${product.pid}">Quantity:</label>
-              <input type="number" id="quantity${product.pid}" name="quantity${product.pid}" min="1" value="1">
-              <button onclick="addProductToCart(${product.pid}, '${product.name}', ${product.price}, 'quantity${product.pid}')">
-                Add to Cart
-              </button>
-            </div>
           `;
+        
+          item.appendChild(productLink);
+        
+          const shopDiv = document.createElement("div");
+          shopDiv.className = "shop";
+          shopDiv.innerHTML = `
+            <label for="quantity${product.pid}">Quantity:</label>
+            <input type="number" id="quantity${product.pid}" min="1" value="1" />
+            <button class="add-to-cart"
+              data-id="${product.pid}"
+              data-name="${productName}"
+              data-price="${product.price}"
+              data-quantity-id="quantity${product.pid}">
+              Add to Cart
+            </button>
+          `;
+        
+          item.appendChild(shopDiv);
+        
+          shopDiv.querySelector(".add-to-cart").addEventListener("click", function () {
+            const id = parseInt(this.dataset.id, 10);
+            const name = this.dataset.name;
+            const price = parseFloat(this.dataset.price);
+            const quantityInputId = this.dataset.quantityId;
+            addProductToCart(id, name, price, quantityInputId);
+          });
+        
           productList.appendChild(item);
         });
       }
+
       dynamicContent.appendChild(productList);
     })
-    .catch(error => console.error("Error fetching products:", error));
+    .catch((error) => {
+      console.error("Error fetching products:", error);
+    });
 }
 
 function fetchProductDetails(pid) {
@@ -251,23 +289,45 @@ function fetchProductDetails(pid) {
     })
     .then(product => {
       const dynamicContent = document.getElementById("dynamic-content");
+
+      let imagePath;
+      if (product.image_path) {
+        imagePath = '/' + escapeHTML(product.image_path); // Use uploaded image
+      } else {
+        imagePath = `/images/product${product.pid}.jpg`; // Fallback to static image
+      }
+      const productName = escapeHTML(product.name);
+      const description = escapeHTML(product.description);
+
       dynamicContent.innerHTML = `
-        <h2>${product.name}</h2>
+        <h2>${productName}</h2>
         <div class="product-details">
-          <img src="${product.image_path}" alt="${product.name}" />
+          <img src="${imagePath}" alt="${productName}" />
           <div class="product-info">
-            <p class="description">${product.description}</p>
+            <p class="description">${description}</p>
             <p class="price">$${product.price}</p>
             <div class="shop">
               <label for="quantity${product.pid}">Quantity:</label>
-              <input type="number" id="quantity${product.pid}" name="quantity${product.pid}" min="1" value="1">
-              <button onclick="addProductToCart(${product.pid}, '${product.name}', ${product.price}, 'quantity${product.pid}')">
+              <input type="number" id="quantity${product.pid}" min="1" value="1">
+              <button class="add-to-cart"
+                data-id="${product.pid}"
+                data-name="${productName}"
+                data-price="${product.price}"
+                data-quantity-id="quantity${product.pid}">
                 Add to Cart
               </button>
             </div>
           </div>
         </div>
       `;
+
+      dynamicContent.querySelector(".add-to-cart").addEventListener("click", function () {
+        const id = parseInt(this.dataset.id, 10);
+        const name = this.dataset.name;
+        const price = parseFloat(this.dataset.price);
+        const quantityInputId = this.dataset.quantityId;
+        addProductToCart(id, name, price, quantityInputId);
+      });
     })
     .catch(error => {
       console.error("Error fetching product details:", error);
@@ -291,8 +351,8 @@ shoppingCart.load();
 document.addEventListener("DOMContentLoaded", () => {
   fetchCategories();
   const urlParams = new URLSearchParams(window.location.search);
-  const pid = urlParams.get('pid');
-  if (pid) {
+  const pid = parseInt(urlParams.get('pid'), 10);
+  if (!isNaN(pid)) {
     fetchProductDetails(pid);
   } else {
     fetchProducts();
