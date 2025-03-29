@@ -94,7 +94,7 @@ function requireAdmin(req, res, next) {
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "", // Replace with actual password
+  password: "y9451216A123!@#", // Replace with actual password
   database: "mydb"           // Replace with your actual database name
 });
 
