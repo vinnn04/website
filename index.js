@@ -1,5 +1,5 @@
 "use strict";
-const express = require("express");
+var express = require("express");
 const bodyParser = require("body-parser");
 const mysql = require("mysql2");
 const multer = require("multer");
@@ -11,7 +11,7 @@ const crypto = require("crypto");
 const helmet = require("helmet");
 const bcrypt = require("bcrypt");
 
-const app = express();
+var app = express();
 
 const SESSION_DURATION = 24 * 60 * 60 * 1000;
 
@@ -25,6 +25,15 @@ app.use(express.json());
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}/`);
+});
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'website.html'));
+});
+
 // CSRF token middleware
 app.use((req, res, next) => {
   if (!req.cookies.csrfToken) {
@@ -32,7 +41,7 @@ app.use((req, res, next) => {
     res.cookie("csrfToken", token, {
       httpOnly: false,
       sameSite: "Strict",
-      secure: false
+      secure: true
     });
     req.csrfToken = token;
   } else {
@@ -481,11 +490,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "website.html"));
-});
 
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}/`);
-});
