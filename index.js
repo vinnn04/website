@@ -69,14 +69,23 @@ function verifyCsrfToken(req, res, next) {
   const tokenFromCookie = req.cookies.csrfToken;
   const tokenFromBody = req.body.csrfToken || req.headers["x-csrf-token"];
 
+  // Check for CSRF token existence and match
   if (!tokenFromCookie || !tokenFromBody || tokenFromCookie !== tokenFromBody) {
     return res.status(403).json({ error: "Invalid CSRF token" });
   }
 
+  // Allow requests only from valid origins
   const origin = req.get("Origin") || req.get("Referer");
-  if (origin && !origin.startsWith("http://localhost:3000")) {
+  // List the allowed origins (update these as needed)
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "https://s09.ierg4210.ie.cuhk.edu.hk"
+  ];
+
+  if (origin && !allowedOrigins.some(o => origin.startsWith(o))) {
     return res.status(403).json({ error: "Blocked by CSRF origin check" });
   }
+  
   next();
 }
 
@@ -162,12 +171,21 @@ app.post("/login", verifyCsrfToken, (req, res) => {
       if (!match) {
         return res.status(401).json({ error: "Invalid email or password." });
       }
+      // Convert admin field if it is a Buffer (common for BIT(1) fields)
+      let isAdmin;
+      if (Buffer.isBuffer(user.admin)) {
+        // If admin is a Buffer, its first byte holds the truthy value (1 or 0)
+        isAdmin = Boolean(user.admin[0]);
+      } else {
+        // Otherwise (if it is a number/string), compare it appropriately
+        isAdmin = Boolean(Number(user.admin));
+      }
       // Successful login: rotate session token to prevent session fixation
       const token = crypto.randomBytes(32).toString("hex");
       sessions[token] = {
         userid: user.userid,
         email: user.email,
-        admin: user.admin === 1 || user.admin === true,
+        admin: isAdmin,
         createdAt: Date.now()
       };
 
@@ -179,7 +197,7 @@ app.post("/login", verifyCsrfToken, (req, res) => {
       });
 
       // Redirect based on role
-      if (sessions[token].admin) {
+      if (isAdmin) {
         res.json({ message: "Login successful", redirect: "/admin.html" });
       } else {
         res.json({ message: "Login successful", redirect: "/website.html" });
@@ -212,7 +230,7 @@ app.get("/profile", (req, res) => {
   ) {
     return res.json({
       email: session.email,
-      admin: session.admin === true || session.admin === 1
+      admin: session.admin
     });
   } else {
     if (token) {
