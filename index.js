@@ -100,12 +100,13 @@ function requireAuth(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  requireAuth(req, res, () => {
-    if (!req.user.admin) {
-      return res.status(403).json({ error: "Forbidden: Admins only" });
-    }
-    next();
-  });
+  const token = req.cookies.authToken;
+  const session = sessions[token];
+  if (token && session && Date.now() - session.createdAt < SESSION_DURATION && session.admin) {
+    return next();
+  } else {
+    return res.status(403).send("Access denied. Admins only.");
+  }
 }
 
 // MySQL Database Connection
@@ -151,6 +152,11 @@ function escapeHTML(str) {
     "'": '&#39;',
   }[char]));
 }
+
+// Serve admin.html only if the user is an admin
+app.get("/admin.html", requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, "admin", "admin.html"));
+});
 
 app.post("/login", verifyCsrfToken, (req, res) => {
   const { email, password } = req.body;
