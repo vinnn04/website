@@ -109,20 +109,32 @@ function requireAdmin(req, res, next) {
   }
 }
 
-// MySQL Database Connection
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "y9451216A123!@#", // Replace with actual password
-  database: "mydb"           // Replace with your actual database name
+// MySQL Database Connection using pooling
+const db = mysql.createPool({
+  "host": "localhost",
+  "user": "root",
+  "password": "y9451216A123!@#",
+  "database": "mydb",
+  "waitForConnections": true,
+  "connectionLimit": 10,
+  "queueLimit": 0
 });
 
-db.connect((err) => {
+setInterval(() => {
+  db.query("SELECT 1", (err) => {
+    if (err) {
+	console.error("Database ping error:", err);
+    }
+  });
+}, 10000);
+
+db.getConnection((err, connection) => {
   if (err) {
     console.error("Error connecting to the database:", err.message);
     return;
   }
-  console.log("Connected to the MySQL database.");
+  console.log("Connected to the MySQL database using pool.");
+  connection.release();
 });
 
 // Multer Configuration for File Uploads
@@ -142,6 +154,11 @@ const upload = multer({
   },
 });
 
+// Serve admin.html only if the user is an admin
+app.get("/admin.html", requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, "admin", "admin.html"));
+});
+
 // Utility: Escape HTML
 function escapeHTML(str) {
   return String(str).replace(/[&<>"']/g, (char) => ({
@@ -152,11 +169,6 @@ function escapeHTML(str) {
     "'": '&#39;',
   }[char]));
 }
-
-// Serve admin.html only if the user is an admin
-app.get("/admin.html", requireAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, "admin", "admin.html"));
-});
 
 app.post("/login", verifyCsrfToken, (req, res) => {
   const { email, password } = req.body;
@@ -177,8 +189,9 @@ app.post("/login", verifyCsrfToken, (req, res) => {
       if (!match) {
         return res.status(401).json({ error: "Invalid email or password." });
       }
+
       // Convert admin field if it is a Buffer (common for BIT(1) fields)
-      let isAdmin;
+      let isAdmin = false;
       if (Buffer.isBuffer(user.admin)) {
         // If admin is a Buffer, its first byte holds the truthy value (1 or 0)
         isAdmin = Boolean(user.admin[0]);
@@ -513,5 +526,3 @@ app.use((err, req, res, next) => {
     error: "Something went wrong. Please try again later."
   });
 });
-
-
